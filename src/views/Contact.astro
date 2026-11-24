@@ -1,0 +1,76 @@
+---
+import { Picture } from 'astro:assets';
+import Base from '@/layouts/Base.astro';
+import dusk from '@/assets/graded/field-dusk.jpg';
+import ContactForm from '@/components/ContactForm';
+import { t } from '@/i18n/content';
+import { href, type Lang } from '@/i18n/routes';
+import { company } from '@/data/company';
+import { commodities } from '@/data/commodities';
+import '@/styles/contact.css';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const d = t(lang);
+const p = d.contact;
+const endpoint = import.meta.env.PUBLIC_FORM_ENDPOINT || undefined;
+const crops = commodities.map((c) => ({ id: c.id, name: c.name[lang] }));
+const regions = Object.entries(d.regions).map(([id, name]) => ({ id, name }));
+---
+
+<Base lang={lang} page="contact" title={p.title} description={p.description}>
+  <section class="ct">
+    <div class="ct__media" aria-hidden="true">
+      <Picture src={dusk} formats={['avif', 'webp']} widths={[640, 1280, 1920, 2400]} sizes="100vw" alt="" loading="eager" />
+    </div>
+    <div class="wrap ct__grid">
+      <div class="ct__info">
+        <h1 class="ct__title">{p.h1}</h1>
+        <p class="ct__lead">{p.lead}</p>
+
+        <dl class="ct__list">
+          <div>
+            <dt class="label">{p.phoneLabel}</dt>
+            <dd><a class="ct__phone" href={company.phoneHref}>{company.phoneDisplay}</a></dd>
+          </div>
+          <div>
+            <dt class="label">{p.messengersLabel}</dt>
+            <dd class="ct__msgs">
+              <a href={company.whatsapp} target="_blank" rel="noopener">WhatsApp</a>
+              <a href={company.viber}>Viber</a>
+            </dd>
+          </div>
+          <div>
+            <dt class="label">{p.addressLabel}</dt>
+            <dd>
+              <address>{lang === 'ru' ? company.addressRu : company.addressEn}</address>
+              <a class="ct__map" href={company.mapLink} target="_blank" rel="noopener">{d.about.mapLink}</a>
+            </dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="ct__panel paper">
+        <span class="ct__seal" aria-hidden="true"></span>
+        <h2 class="ct__ptitle">{p.form.title}</h2>
+        <ContactForm
+          client:load
+          s={p.form}
+          crops={crops}
+          regions={regions}
+          endpoint={endpoint}
+          whatsapp={company.whatsapp}
+          phoneHref={company.phoneHref}
+          phoneDisplay={company.phoneDisplay}
+          privacyHref={href(lang, 'privacy')}
+          lang={lang}
+        />
+        <noscript>
+          <p class="ct__nojs">{lang === 'ru' ? 'Форма работает с включённым JavaScript. Позвоните или напишите в WhatsApp:' : 'The form needs JavaScript. Please call or message us on WhatsApp:'} <a href={company.phoneHref}>{company.phoneDisplay}</a></p>
+        </noscript>
+      </div>
+    </div>
+  </section>
+</Base>

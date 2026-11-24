@@ -1,0 +1,123 @@
+/* Дизайн-токены ООО «Оренбург АгроАльянс». Мир «Горизонт»: тёплый графит земли, бумага
+   товарной накладной, золото низкого солнца как свет. Значения — только отсюда. */
+
+:root {
+  /* — Цвет — */
+  --ink-950: #0e0d0a;
+  --ink-900: #15130f;
+  --ink-850: #1b1915;
+  --ink-800: #221f19;
+  --ink-700: #2e2a22;
+  --ink-600: #3d382e;
+
+  --paper-50: #f8f4eb;
+  --paper-100: #f2ece0;
+  --paper-200: #e7dfcf;
+  --paper-300: #d7ccb6;
+  --paper-400: #bfb29a;
+
+  --olive-900: #23251b;
+  --olive-800: #2c2f22;
+  --olive-600: #535740;
+  --olive-400: #8d9070;
+
+  --gold-200: #f1d7a2;
+  --gold-300: #e8c179;
+  --gold-400: #dca751;
+  --gold-500: #c98e2f;
+  --gold-600: #a57222;
+  --gold-700: #7d561a;
+
+  --mill-green: #3f9a64; /* зелень мельницы из старого логотипа — только в знаке */
+
+  /* роли на тёмном */
+  --on-dark: var(--paper-100);
+  --on-dark-2: #c2b7a1;      /* вторичный текст, тон из бумаги, не серый */
+  --on-dark-3: #8f8573;
+  --rule-dark: rgb(242 236 224 / 0.14);
+  --rule-dark-strong: rgb(242 236 224 / 0.28);
+
+  /* роли на бумаге */
+  --on-paper: #1a1814;
+  --on-paper-2: #5a5243;
+  --on-paper-3: #857a66;
+  --rule-paper: rgb(26 24 20 / 0.14);
+  --rule-paper-strong: rgb(26 24 20 / 0.32);
+
+  --focus: var(--gold-400);
+  --error: #c4502d;
+  --success: #6f8f4e;
+
+  /* — Шрифты — */
+  --font-display: 'Source Serif 4 Variable', 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --font-text: 'Golos Text Variable', 'Golos Text', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  /* — Шкала — */
+  --fs-display: clamp(2.6rem, 1.05rem + 6.2vw, 6rem);
+  --fs-h1: clamp(2.3rem, 1.3rem + 3.9vw, 4.5rem);
+  --fs-h2: clamp(1.95rem, 1.3rem + 2.5vw, 3.4rem);
+  --fs-h3: clamp(1.35rem, 1.15rem + 0.8vw, 1.8rem);
+  --fs-h4: 1.1875rem;
+  --fs-lead: clamp(1.1rem, 1.02rem + 0.38vw, 1.3125rem);
+  --fs-body: 1.0625rem;
+  --fs-small: 0.9375rem;
+  --fs-micro: 0.75rem;
+
+  --lh-display: 0.98;
+  --lh-heading: 1.06;
+  --lh-tight: 1.25;
+  --lh-body: 1.6;
+
+  /* трекинг зависит от размера: крупное уже, мелкое шире */
+  --tr-display: -0.035em;
+  --tr-heading: -0.022em;
+  --tr-body: 0;
+  --tr-micro: 0.08em;
+
+  /* — Пространство (шаг 4px) — */
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-5: 1.25rem;
+  --s-6: 1.5rem;
+  --s-8: 2rem;
+  --s-10: 2.5rem;
+  --s-12: 3rem;
+  --s-16: 4rem;
+  --s-20: 5rem;
+  --s-24: 6rem;
+  --s-32: 8rem;
+
+  --section-y: clamp(5rem, 2.6rem + 8vw, 10.5rem);
+  --gutter: clamp(1rem, 0.4rem + 3.2vw, 3.5rem);
+  --container: 90rem;
+  --measure: 38rem;
+
+  /* — Форма — */
+  --radius-pill: 999px;
+  --radius-s: 4px;
+  --radius-m: 8px;
+  --hairline: 1px;
+
+  /* — Глубина: тень всегда со смещением и мягким размытием — */
+  --shadow-panel: 0 1px 0 rgb(255 255 255 / 0.5) inset, 0 24px 48px -24px rgb(14 13 10 / 0.55), 0 8px 16px -8px rgb(14 13 10 / 0.35);
+  --shadow-lift: 0 18px 40px -22px rgb(14 13 10 / 0.6);
+
+  /* — Движение — */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --t-press: 120ms;
+  --t-ui: 200ms;
+  --t-reveal: 900ms;
+
+  --header-h: 4.5rem;
+}
+
+@media (max-width: 47.99rem) {
+  :root {
+    --header-h: 3.75rem;
+  }
+}

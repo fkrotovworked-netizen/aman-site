@@ -1,0 +1,77 @@
+---
+import { Picture } from 'astro:assets';
+import Base from '@/layouts/Base.astro';
+import PageHead from '@/components/PageHead.astro';
+import Button from '@/components/Button.astro';
+import FinalCta from '@/components/FinalCta.astro';
+import { t } from '@/i18n/content';
+import { href, type Lang } from '@/i18n/routes';
+import { commodities, groups } from '@/data/commodities';
+import sacks from '@/assets/graded/sacks.jpg';
+import '@/styles/pages.css';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const d = t(lang);
+const p = d.commodities;
+const contact = href(lang, 'contact');
+const ru = lang === 'ru';
+const count = (n: number) => (ru ? `${n} ${n === 1 ? 'позиция' : n < 5 ? 'позиции' : 'позиций'}` : `${n} ${n === 1 ? 'item' : 'items'}`);
+---
+
+<Base lang={lang} page="commodities" title={p.title} description={p.description} overlayHeader>
+  <PageHead
+    title={p.h1}
+    lead={p.intro}
+    image={sacks}
+    imageAlt={ru ? 'Мешки с зерном и бобовыми' : 'Sacks of grain and pulses'}
+    imagePosition="50% 45%"
+    caption={count(commodities.length)}
+    sunX="30%"
+  >
+    <Button href={contact} variant="gold">{d.cta.quote}</Button>
+  </PageHead>
+
+  <div class="cm sunlit" style="--sun-x: 85%; --sun-y: 0%">
+    {
+      groups.map((g) => {
+        const items = commodities.filter((c) => c.group === g.id);
+        return (
+          <section class="cm__group wrap" aria-labelledby={`g-${g.id}`}>
+            <div class="cm__ghead">
+              <h2 id={`g-${g.id}`} class="cm__gtitle">{g[lang]}</h2>
+              <span class="cm__count mono">{count(items.length)}</span>
+            </div>
+            <ul class="cm__list" role="list">
+              {items.map((c) => (
+                <li class="tile" id={c.id}>
+                  <div class="tile__img" data-reveal>
+                    {c.photo ? (
+                      <Picture src={c.photo} formats={['avif', 'webp']} widths={[400, 720, 1080]} sizes="(min-width: 80rem) 22vw, (min-width: 64rem) 30vw, (min-width: 36rem) 46vw, 92vw" alt={c.photoAlt?.[lang] ?? ''} />
+                    ) : (
+                      <span class="tile__nophoto label">{p.noPhoto}</span>
+                    )}
+                  </div>
+                  <div class="tile__body">
+                    <h3 class="tile__name">{c.name[lang]}</h3>
+                    {c.note && <p class="tile__note">{c.note[lang]}</p>}
+                    <div class="tile__foot">
+                      <span class="tile__spec label">{p.specs}</span>
+                      <Button href={`${contact}?crop=${c.id}`} variant="quiet" class="tile__btn">
+                        {p.request}
+                      </Button>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        );
+      })
+    }
+  </div>
+
+  <FinalCta lang={lang} title={p.bottomTitle} text={p.bottomText} />
+</Base>

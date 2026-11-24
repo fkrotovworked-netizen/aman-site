@@ -1,0 +1,204 @@
+---
+// «Закупаем» (side="buy", для сельхозпроизводителей) и «Продаём» (side="sell", для покупателей).
+// Один шаблон: шапка на кадре → главный довод (два стекла) на кадре во всю ширину → лист условий и список культур.
+import { Picture } from 'astro:assets';
+import Base from '@/layouts/Base.astro';
+import PageHead from '@/components/PageHead.astro';
+import Button from '@/components/Button.astro';
+import FinalCta from '@/components/FinalCta.astro';
+import { t } from '@/i18n/content';
+import { href, type Lang } from '@/i18n/routes';
+import { commodities } from '@/data/commodities';
+import { company } from '@/data/company';
+import combine from '@/assets/graded/combine-dusk.jpg';
+import trailer from '@/assets/graded/grain-into-trailer.jpg';
+import silos from '@/assets/graded/silos-gold.jpg';
+import hopper from '@/assets/graded/hopper-ru.jpg';
+import '@/styles/pages.css';
+
+interface Props {
+  lang: Lang;
+  side: 'buy' | 'sell';
+}
+const { lang, side } = Astro.props;
+const d = t(lang);
+const p = d[side];
+const ru = lang === 'ru';
+const contact = `${href(lang, 'contact')}?role=${side === 'buy' ? 'supplier' : 'buyer'}`;
+const [first, second] = p.pair;
+const look =
+  side === 'buy'
+    ? {
+        head: combine,
+        headAlt: ru ? 'Комбайн на уборке, вечер' : 'A combine harvester at work in the evening',
+        headPos: '50% 55%',
+        arg: trailer,
+        argAlt: ru ? 'Зерно ссыпают в прицеп' : 'Grain pouring into a trailer',
+        sun: '20%',
+      }
+    : {
+        head: silos,
+        headAlt: ru ? 'Зернохранилища на закате' : 'Grain silos at sunset',
+        headPos: '50% 50%',
+        arg: hopper,
+        argAlt: ru ? 'Вагоны-хопперы на железной дороге' : 'Hopper wagons on the railway',
+        sun: '78%',
+      };
+---
+
+<Base lang={lang} page={side} title={p.title} description={p.description} overlayHeader>
+  <PageHead
+    title={p.h1}
+    lead={p.intro}
+    image={look.head}
+    imageAlt={look.headAlt}
+    imagePosition={look.headPos}
+    caption={`${company.city[lang]} · ${company.coords.label}`}
+    sunX={look.sun}
+  >
+    <Button href={contact} variant="gold">{p.cta}</Button>
+  </PageHead>
+
+  <!-- Главный довод — крупно, на кадре во всю ширину -->
+  <section class="arg" aria-labelledby="arg-title">
+    <div class="arg__media" data-reveal>
+      <Picture src={look.arg} formats={['avif', 'webp']} widths={[640, 960, 1440, 1920, 2400]} sizes="100vw" alt={look.argAlt} />
+    </div>
+    <div class="wrap arg__inner">
+      <h2 id="arg-title" class="arg__title">{p.argTitle}</h2>
+      <div class="arg__pair">
+        <div class="arg__card glass">
+          <h3 class="arg__k">{first.t}</h3>
+          <p>{first.d}</p>
+        </div>
+        <div class="arg__card glass">
+          <h3 class="arg__k">{second.t}</h3>
+          <p>{second.d}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Лист: условия, список культур, связь -->
+  <section class="section sheet-sec sunlit" aria-labelledby="terms-title" style="--sun-x: 15%; --sun-y: 0%">
+    <div class="wrap">
+      <div class="sheet paper">
+        <div class="sheet__head">
+          <h2 id="terms-title" class="h2">{p.sheetTitle}</h2>
+        </div>
+        <dl class="ledger">
+          {
+            p.rows.map((row) => (
+              <div class="ledger__row">
+                <dt class="ledger__k">{row.t}</dt>
+                <dd class="ledger__v">{row.d}</dd>
+              </div>
+            ))
+          }
+          <div class="ledger__row">
+            <dt class="ledger__k">{p.listTitle}</dt>
+            <dd class="ledger__v">
+              <ul class="buylist" role="list">
+                {commodities.map((c) => <li>{c.name[lang]}</li>)}
+              </ul>
+            </dd>
+          </div>
+        </dl>
+        <div class="actions sheet__actions">
+          <Button href={contact} variant="gold">{p.cta}</Button>
+          <a class="farm-phone" href={company.phoneHref}>{company.phoneDisplay}</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <FinalCta lang={lang} />
+</Base>
+
+<style>
+  .arg {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    align-items: end;
+    min-height: max(42rem, 100svh);
+    padding-block: var(--section-y) clamp(2.5rem, 1.5rem + 4vw, 5rem);
+    overflow: hidden;
+    background: var(--ink-950);
+  }
+  .arg__media {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+  }
+  .arg__media :global(picture),
+  .arg__media :global(img) {
+    width: 100%;
+    max-width: none;
+    height: 100% !important;
+    object-fit: cover;
+    object-position: 50% 40%;
+  }
+  .arg__media::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(180deg, var(--ink-950) 0%, rgb(14 13 10 / 0) 22%),
+      linear-gradient(0deg, rgb(14 13 10 / 0.88) 0%, rgb(14 13 10 / 0.5) 45%, rgb(14 13 10 / 0.15) 75%),
+      linear-gradient(0deg, rgb(40 24 6 / 0.3), rgb(40 24 6 / 0.3)),
+      radial-gradient(55% 60% at 90% 10%, rgb(232 168 82 / 0.28), transparent 70%);
+  }
+  .arg__inner {
+    display: grid;
+    gap: clamp(2rem, 1rem + 3vw, 4rem);
+    width: 100%;
+  }
+  .arg__title {
+    font-family: var(--font-display);
+    font-size: clamp(2.75rem, 1rem + 6vw, 6rem);
+    font-weight: 360;
+    line-height: 0.98;
+    letter-spacing: -0.038em;
+    color: var(--paper-50);
+    max-width: 17ch;
+    text-wrap: balance;
+  }
+  .arg__pair {
+    display: grid;
+    gap: var(--s-4);
+  }
+  @media (min-width: 48rem) {
+    .arg__pair {
+      grid-template-columns: 1fr 1fr;
+      max-width: 56rem;
+    }
+  }
+  .arg__card {
+    --glass-bg: rgb(16 14 10 / 0.58);
+    display: grid;
+    gap: var(--s-3);
+    align-content: start;
+    padding: clamp(1.25rem, 1rem + 1.5vw, 2.25rem);
+  }
+  .arg__k {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 1.2rem + 1vw, 2.125rem);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    color: var(--gold-200);
+  }
+  .arg__card p {
+    color: var(--paper-200);
+    font-size: var(--fs-lead);
+    line-height: 1.5;
+  }
+  .farm-phone {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    letter-spacing: -0.015em;
+    text-decoration: none;
+    font-feature-settings: 'tnum', 'lnum';
+  }
+</style>

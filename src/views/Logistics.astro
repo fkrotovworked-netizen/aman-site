@@ -1,0 +1,183 @@
+---
+import { Picture } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import Base from '@/layouts/Base.astro';
+import PageHead from '@/components/PageHead.astro';
+import Button from '@/components/Button.astro';
+import FinalCta from '@/components/FinalCta.astro';
+import { t } from '@/i18n/content';
+import { href, type Lang } from '@/i18n/routes';
+import { company } from '@/data/company';
+import steppe from '@/assets/graded/hopper-steppe.jpg';
+import truck from '@/assets/graded/truck-harvest.jpg';
+import rail from '@/assets/graded/hopper-ru.jpg';
+import ears from '@/assets/graded/ears-gold.jpg';
+import trailer from '@/assets/graded/grain-into-trailer.jpg';
+import wheat from '@/assets/graded/crop-wheat.jpg';
+import elevator from '@/assets/graded/elevator-concrete.jpg';
+import wagons from '@/assets/graded/rail-wagons.jpg';
+import silos from '@/assets/graded/silos-gold.jpg';
+import '@/styles/pages.css';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const d = t(lang);
+const p = d.logistics;
+const ru = lang === 'ru';
+const ledger = p.sheet;
+const total = String(p.steps.length).padStart(2, '0');
+
+// кадр к каждому шагу: обращение → предложение → согласование → договор → организация поставки → исполнение
+const frames: { img: ImageMetadata; alt: string; pos?: string }[] = [
+  { img: ears, alt: ru ? 'Колосья пшеницы' : 'Wheat ears', pos: '50% 40%' },
+  { img: wheat, alt: ru ? 'Зерно пшеницы крупным планом' : 'Wheat grain, close-up' },
+  { img: silos, alt: ru ? 'Зернохранилища на закате' : 'Grain silos at sunset' },
+  { img: elevator, alt: ru ? 'Элеватор у железной дороги' : 'A grain elevator by the railway' },
+  { img: trailer, alt: ru ? 'Зерно ссыпают в прицеп' : 'Grain pouring into a trailer' },
+  { img: wagons, alt: ru ? 'Вагоны на железной дороге' : 'Wagons on the railway' },
+];
+---
+
+<Base lang={lang} page="logistics" title={p.title} description={p.description} overlayHeader>
+  <PageHead
+    title={p.h1}
+    lead={p.intro}
+    image={steppe}
+    imageAlt={ru ? 'Состав вагонов-зерновозов в степи' : 'A train of grain hopper wagons crossing the steppe'}
+    imagePosition="50% 60%"
+    caption={`${company.city[lang]} · ${company.coords.label}`}
+    sunX="85%"
+  >
+    <Button href={href(lang, 'contact')} variant="gold">{d.cta.quote}</Button>
+  </PageHead>
+
+  <!-- Путь зерна: золотая нить шагов слева, липкий кадр справа меняется по шагу -->
+  <section class="section path sunlit" aria-labelledby="steps-title" style="--sun-x: 15%; --sun-y: 0%">
+    <div class="wrap">
+      <h2 id="steps-title" class="h1 path__title">{p.stepsTitle}</h2>
+      <div class="path__grid">
+        <ol class="path__list" role="list" data-path>
+          {
+            p.steps.map((s, i) => (
+              <li class="path__step" data-step={i}>
+                <span class="path__node" aria-hidden="true" />
+                <span class="path__n mono">{String(i + 1).padStart(2, '0')} / {total}</span>
+                <h3 class="path__t">{s.t}</h3>
+                <p class="path__d">{s.d}</p>
+                <figure class="path__inline" data-reveal>
+                  <Picture src={frames[i].img} formats={['avif', 'webp']} widths={[480, 960]} sizes="100vw" alt={frames[i].alt} style={`object-position:${frames[i].pos ?? '50% 50%'}`} />
+                </figure>
+              </li>
+            ))
+          }
+        </ol>
+        <div class="path__stage" aria-hidden="true">
+          <div class="path__frame">
+            {
+              frames.map((f, i) => (
+                <Picture
+                  src={f.img}
+                  formats={['avif', 'webp']}
+                  widths={[720, 1080, 1440]}
+                  sizes="(min-width: 64rem) 46vw, 0px"
+                  alt=""
+                  class="path__pic"
+                  data-frame={i}
+                  data-on={i === 0 ? '' : undefined}
+                  style={`object-position:${f.pos ?? '50% 50%'}`}
+                />
+              ))
+            }
+            
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Два вида транспорта: два кадра в полный рост -->
+  <section class="modes2" aria-labelledby="modes-title">
+    <div class="wrap">
+      <h2 id="modes-title" class="h1 modes2__title">{p.modesTitle}</h2>
+    </div>
+    <div class="modes2__grid">
+      <article class="side">
+        <div class="side__img">
+          <Picture src={truck} formats={['avif', 'webp']} widths={[640, 960, 1440]} sizes="(min-width: 48rem) 50vw, 100vw" alt={ru ? 'Зерновоз у поля во время уборки' : 'A grain truck by the field during harvest'} style="object-position: 30% 50%" />
+        </div>
+        <div class="side__body">
+          <h3 class="side__title">{p.road.t}</h3>
+          <p>{p.road.d}</p>
+        </div>
+      </article>
+      <article class="side">
+        <div class="side__img">
+          <Picture src={rail} formats={['avif', 'webp']} widths={[640, 960, 1440]} sizes="(min-width: 48rem) 50vw, 100vw" alt={ru ? 'Вагоны-хопперы на железной дороге' : 'Hopper wagons on the railway'} />
+        </div>
+        <div class="side__body">
+          <h3 class="side__title">{p.rail.t}</h3>
+          <p>{p.rail.d}</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Накладная: что закрываем по каждой партии -->
+  <section class="section sheet-sec sunlit" aria-labelledby="sheet-title" style="--sun-x: 80%; --sun-y: 100%">
+    <div class="wrap">
+      <div class="sheet paper">
+        <div class="sheet__head">
+          <h2 id="sheet-title" class="h2">{p.sheetTitle}</h2>
+          <span class="sheet__mark label">{ru ? company.legalRu : company.legalEn}</span>
+        </div>
+        <dl class="ledger">
+          {
+            ledger.map((row) => (
+              <div class="ledger__row">
+                <dt class="ledger__k">{row.k}</dt>
+                <dd class="ledger__v">{row.v}</dd>
+              </div>
+            ))
+          }
+        </dl>
+        <div class="actions sheet__actions">
+          <Button href={href(lang, 'contact')} variant="gold">{d.cta.quote}</Button>
+          <Button href={href(lang, 'markets')} variant="quiet">{d.cta.markets}</Button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <FinalCta lang={lang} />
+</Base>
+
+<script>
+  // Путь зерна: активный шаг — тот, что пересёк середину экрана. Нить заполняется до него,
+  // липкий кадр справа сменяется на кадр шага.
+  const list = document.querySelector<HTMLElement>('[data-path]');
+  if (list) {
+    const steps = [...list.querySelectorAll<HTMLElement>('[data-step]')];
+    const pics = [...document.querySelectorAll<HTMLElement>('[data-frame]')];
+    const set = (i: number) => {
+      steps.forEach((s, k) => {
+        s.toggleAttribute('data-active', k === i);
+        s.toggleAttribute('data-passed', k < i);
+      });
+      pics.forEach((p) => p.toggleAttribute('data-on', p.dataset.frame === String(i)));
+      const node = steps[i];
+      list.style.setProperty('--fill', `${node.offsetTop + 12}px`);
+    };
+    set(0);
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) set(Number((e.target as HTMLElement).dataset.step));
+        });
+      },
+      { rootMargin: '-55% 0px -44% 0px' },
+    );
+    steps.forEach((s) => io.observe(s));
+  }
+</script>

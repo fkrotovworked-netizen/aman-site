@@ -1,0 +1,70 @@
+---
+import Base from '@/layouts/Base.astro';
+import Button from '@/components/Button.astro';
+import { t } from '@/i18n/content';
+import { href } from '@/i18n/routes';
+const d = t('ru');
+const e = t('en');
+---
+
+<Base lang="ru" page="404" title={d.notFound.title} description={d.notFound.text} noindex>
+  <section class="nf">
+    <div class="wrap">
+      <h1 class="nf__title">{d.notFound.h1}</h1>
+      <p class="nf__text">{d.notFound.text}</p>
+      <div class="actions">
+        <Button href={href('ru', 'home')} variant="gold">{d.nav.home}</Button>
+        <Button href={href('ru', 'commodities')} variant="line">{d.nav.commodities}</Button>
+      </div>
+      <div class="nf__rule" aria-hidden="true"><span></span><span class="nf__code mono">404</span></div>
+      <p class="nf__en" lang="en">{e.notFound.h1}. <a href={href('en', 'home')}>{e.nav.home} →</a></p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .nf {
+    min-height: 100svh;
+    display: grid;
+    align-items: center;
+    padding-block: calc(var(--header-h) + var(--s-16)) var(--s-16);
+    background:
+      radial-gradient(70% 60% at 50% 100%, rgb(201 142 47 / 0.14), transparent 70%),
+      var(--ink-900);
+  }
+  .nf__code {
+    color: var(--gold-200);
+  }
+  .nf__title {
+    font-size: var(--fs-display);
+    font-weight: 380;
+    line-height: var(--lh-display);
+    letter-spacing: var(--tr-display);
+    max-width: 14ch;
+  }
+  .nf__text {
+    margin-top: var(--s-6);
+    max-width: 34rem;
+    color: var(--on-dark-2);
+    font-size: var(--fs-lead);
+  }
+  .nf .actions {
+    margin-top: var(--s-10);
+  }
+  .nf__rule {
+    display: flex;
+    align-items: center;
+    gap: var(--s-4);
+    margin-top: var(--s-16);
+  }
+  .nf__rule span:first-child {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--gold-300), rgb(232 168 82 / 0.15));
+    box-shadow: 0 0 12px 0 rgb(232 168 82 / 0.35);
+  }
+  .nf__en {
+    margin-top: var(--s-5);
+    color: var(--on-dark-3);
+  }
+</style>

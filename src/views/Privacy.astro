@@ -1,0 +1,30 @@
+---
+import Base from '@/layouts/Base.astro';
+import PageHead from '@/components/PageHead.astro';
+import { t } from '@/i18n/content';
+import type { Lang } from '@/i18n/routes';
+import { company } from '@/data/company';
+import { privacy } from '@/data/privacy';
+import '@/styles/pages.css';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const d = t(lang);
+const p = d.privacy;
+---
+
+<Base lang={lang} page="privacy" title={p.title} description={p.description} overlayHeader>
+  <PageHead title={p.h1} lead={lang === 'ru' ? company.legalRu : company.legalEn} />
+  <section class="section paper">
+    <div class="wrap">
+      <ol class="legal">
+        {privacy[lang].map((para) => <li><p>{para}</p></li>)}
+      </ol>
+      <p class="legal__contact label">
+        {lang === 'ru' ? company.legalRu : company.legalEn} · {lang === 'ru' ? company.addressRu : company.addressEn} · <a href={company.phoneHref}>{company.phoneDisplay}</a>
+      </p>
+    </div>
+  </section>
+</Base>

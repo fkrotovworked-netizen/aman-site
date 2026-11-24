@@ -1,0 +1,43 @@
+---
+// Знак: мельница со старого логотипа, перерисованная в один штрих над линией горизонта.
+// Четыре крыла крестом, башня-трапеция, горизонт — общий мотив сайта.
+interface Props {
+  size?: number;
+  class?: string;
+  title?: string;
+  /** крылья крутятся от прокрутки (скрипт в Base) — только шапка и подвал */
+  spin?: boolean;
+}
+const { size = 36, class: cls, title, spin = false } = Astro.props;
+---
+
+<svg
+  class={cls}
+  width={size}
+  height={size}
+  viewBox="0 0 48 48"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.6"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  role={title ? 'img' : undefined}
+  aria-hidden={title ? undefined : 'true'}
+  data-mill={spin ? '' : undefined}
+>
+  {title && <title>{title}</title>}
+  <!-- крылья -->
+  <g class="mark__blades">
+    <path d="M24 18 L11.5 5.5 L8.6 8.4 L21.1 20.9" />
+    <path d="M24 18 L36.5 5.5 L39.4 8.4 L26.9 20.9" />
+    <path d="M24 18 L13 29" />
+    <path d="M24 18 L35 29" />
+    <path d="M12.6 8.9 L15.4 6.1 M15.6 11.9 L18.4 9.1 M35.4 8.9 L32.6 6.1 M32.4 11.9 L29.6 9.1" stroke-width="1.1" />
+  </g>
+  <!-- башня -->
+  <path d="M19.5 39 L21.2 22.4 Q24 20.8 26.8 22.4 L28.5 39" />
+  <circle cx="24" cy="18" r="1.9" fill="currentColor" stroke="none" />
+  <path d="M22.6 39 V34.2 Q24 32.8 25.4 34.2 V39" stroke-width="1.2" />
+  <!-- горизонт -->
+  <path d="M4 39 H44" />
+</svg>

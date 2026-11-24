@@ -1,0 +1,107 @@
+---
+// Финальное действие: вечернее поле с тёплым светом над горизонтом, крупный заголовок и одна кнопка.
+// Телефон и мессенджеры не дублируем — они в подвале сразу ниже.
+import { Picture } from 'astro:assets';
+import Button from './Button.astro';
+import dusk from '@/assets/graded/field-dusk.jpg';
+import { t } from '@/i18n/content';
+import { href, type Lang } from '@/i18n/routes';
+
+interface Props {
+  lang: Lang;
+  title?: string;
+  text?: string;
+}
+const { lang, title, text } = Astro.props;
+const d = t(lang);
+---
+
+<section class="fcta" aria-labelledby="fcta-title">
+  <div class="fcta__media" aria-hidden="true">
+    <Picture src={dusk} formats={['avif', 'webp']} widths={[640, 1280, 1920, 2400]} sizes="100vw" alt="" />
+  </div>
+  <div class="fcta__sun" aria-hidden="true"></div>
+  <div class="wrap fcta__inner">
+    <h2 id="fcta-title" class="fcta__title">{title ?? d.home.finalTitle}</h2>
+    <div class="fcta__side">
+      <p class="fcta__text">{text ?? d.home.finalText}</p>
+      <Button href={href(lang, 'contact')} variant="gold">{d.cta.quote}</Button>
+    </div>
+  </div>
+</section>
+
+<style>
+  .fcta {
+    /* низ кадра уходит ровно в цвет подвала — без шва */
+    --fcta-floor: var(--ink-950);
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    padding-block: clamp(6rem, 3rem + 10vw, 12rem);
+    background: var(--ink-950);
+  }
+  .fcta__media {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+  }
+  .fcta__media :global(picture),
+  .fcta__media :global(img) {
+    width: 100%;
+    max-width: none;
+    height: 100% !important;
+    object-fit: cover;
+    object-position: 50% 45%;
+  }
+  .fcta__media::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    /* сверху кадр растворяется в предыдущую секцию, слева — подложка под заголовок */
+    background:
+      linear-gradient(180deg, var(--ink-900) 0%, rgb(14 13 10 / 0) 28%, rgb(14 13 10 / 0) 62%, var(--fcta-floor) 100%),
+      radial-gradient(40% 55% at 80% 62%, rgb(14 13 10 / 0.55), transparent 75%),
+      linear-gradient(90deg, rgb(14 13 10 / 0.45), rgb(14 13 10 / 0) 55%);
+  }
+  /* низкое солнце над полем — светлое пятно, а не мутная тьма */
+  .fcta__sun {
+    position: absolute;
+    left: 52%;
+    top: 40%;
+    z-index: -1;
+    width: min(70rem, 150vw);
+    aspect-ratio: 2.2 / 1;
+    pointer-events: none;
+    mix-blend-mode: screen;
+    background: radial-gradient(closest-side, rgb(255 222 160 / 0.42), rgb(240 170 80 / 0.18) 38%, transparent 76%);
+    transform: translate(-50%, -50%);
+  }
+  .fcta__inner {
+    display: grid;
+    gap: var(--s-10);
+    align-items: end;
+  }
+  @media (min-width: 64rem) {
+    .fcta__inner {
+      grid-template-columns: 1.2fr 0.8fr;
+    }
+  }
+  .fcta__title {
+    font-size: clamp(3rem, 1rem + 7vw, 6rem);
+    font-weight: 360;
+    line-height: 0.96;
+    letter-spacing: -0.038em;
+    color: var(--paper-50);
+  }
+  .fcta__side {
+    display: grid;
+    gap: var(--s-5);
+    justify-items: start;
+  }
+  .fcta__text {
+    color: var(--paper-200);
+    font-size: var(--fs-lead);
+    line-height: 1.5;
+    max-width: 28rem;
+  }
+</style>

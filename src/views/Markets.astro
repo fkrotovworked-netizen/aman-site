@@ -1,0 +1,48 @@
+---
+import Base from '@/layouts/Base.astro';
+import PageHead from '@/components/PageHead.astro';
+import MarketMap from '@/components/MarketMap.astro';
+import FinalCta from '@/components/FinalCta.astro';
+import { t } from '@/i18n/content';
+import type { Lang } from '@/i18n/routes';
+import { company } from '@/data/company';
+import '@/styles/pages.css';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const d = t(lang);
+const p = d.markets;
+---
+
+<Base lang={lang} page="markets" title={p.title} description={p.description} overlayHeader>
+  <PageHead title={p.h1} lead={p.intro} caption={`${company.city[lang]} · ${company.coords.label}`} sunX="62%" />
+
+  <section class="section mk" aria-label={p.h1}>
+    <div class="wrap">
+      <MarketMap lang={lang} detailed />
+      <p class="mk__note">{p.note}</p>
+    </div>
+  </section>
+
+  <FinalCta lang={lang} />
+</Base>
+
+<style>
+  .mk {
+    padding-top: clamp(1rem, 0.5rem + 2vw, 3rem);
+    background:
+      linear-gradient(180deg, var(--ink-900) 0%, rgb(21 19 15 / 0) 18%),
+      radial-gradient(60% 55% at 58% 30%, rgb(232 168 82 / 0.08), transparent 70%),
+      radial-gradient(70% 60% at 55% 35%, rgb(83 87 64 / 0.32), transparent 70%),
+      var(--ink-900);
+  }
+  .mk__note {
+    margin-top: var(--s-10);
+    padding-top: var(--s-5);
+    border-top: 1px solid var(--rule-dark);
+    color: var(--on-dark-2);
+    max-width: 36rem;
+  }
+</style>

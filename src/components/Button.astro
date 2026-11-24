@@ -1,0 +1,33 @@
+---
+// «Луч по контуру»: капсула со стрелкой в круге. gold — главное действие; line — тёмная вторичная;
+// quiet — текстовая ссылка со стрелкой. Капсулы тянутся к курсору (data-magnet, скрипт в Base).
+interface Props {
+  href?: string;
+  variant?: 'gold' | 'line' | 'quiet';
+  type?: 'button' | 'submit';
+  class?: string;
+  arrow?: boolean;
+  [key: string]: unknown;
+}
+const { href, variant = 'gold', type = 'button', class: cls, arrow = true, ...rest } = Astro.props;
+const Tag = href ? 'a' : 'button';
+---
+
+<Tag
+  class:list={['btn', `btn--${variant}`, cls]}
+  href={href}
+  type={href ? undefined : type}
+  data-magnet={variant === 'quiet' ? undefined : ''}
+  {...rest}
+>
+  <span class="btn__label"><slot /></span>
+  {
+    arrow && (
+      <span class="btn__dot" aria-hidden="true">
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3.5 8h9M8.5 4l4 4-4 4" />
+        </svg>
+      </span>
+    )
+  }
+</Tag>

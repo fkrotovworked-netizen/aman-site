@@ -1,0 +1,248 @@
+---
+import { Picture } from 'astro:assets';
+import Base from '@/layouts/Base.astro';
+import Hero from '@/components/Hero.astro';
+import Button from '@/components/Button.astro';
+import CropIndexBlock from '@/components/CropIndexBlock.astro';
+import MarketMap from '@/components/MarketMap.astro';
+import FinalCta from '@/components/FinalCta.astro';
+import { t } from '@/i18n/content';
+import { href, type Lang } from '@/i18n/routes';
+import wagons from '@/assets/graded/hopper-steppe.jpg';
+import silos from '@/assets/graded/silos-gold.jpg';
+import ears from '@/assets/graded/ears-gold.jpg';
+import hopperRu from '@/assets/graded/hopper-ru.jpg';
+import elevator from '@/assets/graded/elevator-concrete.jpg';
+import combine from '@/assets/graded/combine-dusk.jpg';
+import sacks from '@/assets/graded/sacks.jpg';
+import wheat from '@/assets/graded/crop-wheat.jpg';
+import truck from '@/assets/graded/truck-harvest.jpg';
+import plain from '@/assets/graded/plain-sky.jpg';
+import '@/styles/home.css';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const d = t(lang);
+const h = d.home;
+const inlines = [ears, hopperRu, elevator];
+// кадры строк описи — по порядку h.ledger
+const vedImgs = [sacks, wheat, truck, elevator, hopperRu, silos, plain];
+---
+
+<Base lang={lang} page="home" title={h.title} description={h.description} overlayHeader>
+  <Hero lang={lang} />
+
+  <!-- 1. Кто мы: заявление во всю ширину с фото-вставками между словами -->
+  <section class="section paper ledger-sec" aria-labelledby="ledger-title" data-lightwords>
+    <div class="wrap">
+      <h2 id="ledger-title" class="ledger-sec__title" aria-label={h.ledgerTitle}>
+        {
+          h.ledgerParts.map((part) =>
+            typeof part === 'number' ? (
+              <span class="inl" data-reveal aria-hidden="true">
+                <Picture src={inlines[part]} formats={['avif', 'webp']} widths={[240, 480]} sizes="12rem" alt="" />
+              </span>
+            ) : (
+              <span aria-hidden="true">
+                {part.split(' ').map((w) => (
+                  <>
+                    <span class="lw">{w}</span>{' '}
+                  </>
+                ))}
+              </span>
+            ),
+          )
+        }
+      </h2>
+    </div>
+  </section>
+
+  <!-- 1б. Опись: «Ведомость со светом» — крупные строки на тёмном, за курсором плывёт кадр -->
+  <section class="ved sunlit" data-ved aria-labelledby="ledger-title" style="--sun-x: 90%; --sun-y: 0%">
+    <div class="wrap">
+      <ol class="ved__list" role="list">
+        {
+          h.ledger.map((row, i) => (
+            <li class="ved__row" data-i={i} style={`--d:${i * 70}ms`}>
+              <span class="ved__k mono">{row.k}</span>
+              <span class="ved__v">{row.v}</span>
+              <span class="ved__thumb" aria-hidden="true">
+                <Picture src={vedImgs[i]} formats={['avif', 'webp']} widths={[160]} sizes="4.5rem" alt="" />
+              </span>
+            </li>
+          ))
+        }
+      </ol>
+      <div class="ved__foot">
+        <Button href={href(lang, 'about')} variant="line">{d.nav.about}</Button>
+      </div>
+    </div>
+    <div class="ved__float" aria-hidden="true">
+      {vedImgs.map((img, i) => <Picture src={img} formats={['avif', 'webp']} widths={[480]} sizes="17rem" alt="" loading="lazy" data-f={i} />)}
+    </div>
+  </section>
+
+  <!-- 2. Культуры: указатель -->
+  <section class="section crops sunlit" aria-labelledby="crops-title">
+    <div class="wrap">
+      <div class="crops__head">
+        <h2 id="crops-title" class="h1">{h.cropsTitle}</h2>
+        <div class="crops__aside">
+          <p>{h.cropsText}</p>
+          <Button href={href(lang, 'commodities')} variant="line">{d.cta.commodities}</Button>
+        </div>
+      </div>
+      <CropIndexBlock lang={lang} />
+    </div>
+  </section>
+
+  <!-- 3. Рынки: карта -->
+  <section class="section markets" aria-labelledby="markets-title">
+    <div class="wrap">
+      <div class="sec-head markets__head">
+        <h2 id="markets-title" class="h1">{h.marketsTitle}</h2>
+        <p>{h.marketsText}</p>
+      </div>
+      <MarketMap lang={lang} />
+      <div class="markets__more">
+        <Button href={href(lang, 'markets')} variant="quiet">{d.cta.markets}</Button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Логистика: кадр на всю ширину, опись на стекле -->
+  <section class="logi" aria-labelledby="logi-title">
+    <div class="logi__media" data-reveal>
+      <Picture
+        src={wagons}
+        formats={['avif', 'webp']}
+        widths={[640, 960, 1440, 1920, 2400]}
+        sizes="100vw"
+        alt={lang === 'ru' ? 'Состав вагонов-зерновозов в степи' : 'A train of grain hopper wagons crossing the steppe'}
+      />
+    </div>
+    <div class="wrap logi__inner">
+      <div class="logi__panel glass">
+        <h2 id="logi-title" class="h2">{h.logisticsTitle}</h2>
+        <p class="logi__text">{h.logisticsText}</p>
+        <ul class="logi__points" role="list">
+          {h.logisticsPoints.map((p) => <li>{p}</li>)}
+        </ul>
+        <Button href={href(lang, 'logistics')} variant="line">{d.cta.logistics}</Button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Две стороны сделки: два кадра в полный рост -->
+  <section class="sides" aria-labelledby="sides-title">
+    <div class="wrap">
+      <h2 id="sides-title" class="h1 sides__title">{h.sidesTitle}</h2>
+    </div>
+    <div class="sides__grid">
+      <article class="side">
+        <div class="side__img" aria-hidden="true">
+          <Picture src={silos} formats={['avif', 'webp']} widths={[640, 960, 1440]} sizes="(min-width: 48rem) 50vw, 100vw" alt="" />
+        </div>
+        <div class="side__body">
+          <h3 class="side__title">{h.buyers.title}</h3>
+          <p>{h.buyers.text}</p>
+          <Button href={href(lang, 'sell')} variant="gold">{h.buyers.cta}</Button>
+        </div>
+      </article>
+      <article class="side">
+        <div class="side__img" aria-hidden="true">
+          <Picture src={combine} formats={['avif', 'webp']} widths={[640, 960, 1440]} sizes="(min-width: 48rem) 50vw, 100vw" alt="" />
+        </div>
+        <div class="side__body">
+          <h3 class="side__title">{h.farmers.title}</h3>
+          <p>{h.farmers.text}</p>
+          <Button href={href(lang, 'buy')} variant="line">{h.farmers.cta}</Button>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <FinalCta lang={lang} />
+</Base>
+
+<script>
+  // Заявление: слова «проявляются светом» по прокрутке — фронт идёт по тексту, слово на фронте
+  // вспыхивает золотом и остывает в чернила. Без JS и при reduced motion текст виден сразу.
+  const lw = document.querySelector<HTMLElement>('[data-lightwords]');
+  if (lw && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const title = lw.querySelector<HTMLElement>('.ledger-sec__title')!;
+    const words = [...title.querySelectorAll<HTMLElement>('.lw')];
+    const n = words.length;
+    let shown = -1, pending = 0;
+    title.setAttribute('data-lw', '');
+    const update = () => {
+      pending = 0;
+      const r = title.getBoundingClientRect();
+      const vh = innerHeight;
+      // начало — верх заголовка на 85% экрана, конец — низ заголовка на 55%
+      const p = (vh * 0.85 - r.top) / (r.height + vh * 0.3);
+      const upto = Math.round(Math.min(1, Math.max(0, p)) * n);
+      if (upto === shown) return;
+      shown = upto;
+      words.forEach((w, i) => {
+        w.toggleAttribute('data-lit', i < upto);
+        w.toggleAttribute('data-glow', upto < n && i < upto && i >= upto - 3);
+      });
+    };
+    addEventListener('scroll', () => pending || (pending = requestAnimationFrame(update)), { passive: true });
+    update();
+  }
+
+  // Опись: строки проявляются при входе в экран; на мыши за курсором плывёт кадр строки
+  const ved = document.querySelector<HTMLElement>('[data-ved]');
+  if (ved) {
+    const rows = [...ved.querySelectorAll<HTMLElement>('.ved__row')];
+    const io = new IntersectionObserver(
+      (es) =>
+        es.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.setAttribute('data-in', '');
+            io.unobserve(e.target);
+          }
+        }),
+      { rootMargin: '0px 0px -10% 0px' },
+    );
+    rows.forEach((r) => io.observe(r));
+
+    if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      const fl = ved.querySelector<HTMLElement>('.ved__float')!;
+      const imgs = [...fl.querySelectorAll<HTMLElement>('[data-f]')];
+      const list = ved.querySelector<HTMLElement>('.ved__list')!;
+      const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let tx = 0, ty = 0, x = 0, y = 0, raf = 0;
+      const k = still ? 1 : 0.14;
+      const loop = () => {
+        x += (tx - x) * k;
+        y += (ty - y) * k;
+        fl.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+        raf = Math.abs(tx - x) + Math.abs(ty - y) > 0.3 ? requestAnimationFrame(loop) : 0;
+      };
+      ved.addEventListener('pointermove', (e) => {
+        const r = ved.getBoundingClientRect();
+        tx = e.clientX - r.left + 28;
+        ty = e.clientY - r.top - 120;
+        if (!raf) raf = requestAnimationFrame(loop);
+      });
+      rows.forEach((row) =>
+        row.addEventListener('pointerenter', () => {
+          if (!fl.hasAttribute('data-on')) {
+            // первый показ — сразу у курсора, без пролёта через экран
+            x = tx;
+            y = ty;
+            fl.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+          }
+          fl.setAttribute('data-on', '');
+          imgs.forEach((im) => im.toggleAttribute('data-on', im.dataset.f === row.dataset.i));
+        }),
+      );
+      list.addEventListener('pointerleave', () => fl.removeAttribute('data-on'));
+    }
+  }
+</script>

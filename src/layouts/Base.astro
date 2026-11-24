@@ -1,0 +1,199 @@
+---
+import '@/styles/base.css';
+import '@/styles/components.css';
+import Header from '@/components/Header.astro';
+import Footer from '@/components/Footer.astro';
+import { t } from '@/i18n/content';
+import { href, asset, type Lang, type PageKey } from '@/i18n/routes';
+import { company } from '@/data/company';
+
+interface Props {
+  lang: Lang;
+  page: PageKey | '404';
+  title: string;
+  description: string;
+  /** шапка поверх тёмного первого экрана — прозрачная до прокрутки */
+  overlayHeader?: boolean;
+  noindex?: boolean;
+}
+
+const { lang, page, title, description, overlayHeader = false, noindex = false } = Astro.props;
+const d = t(lang);
+const other: Lang = lang === 'ru' ? 'en' : 'ru';
+const site = Astro.site!;
+const selfPath = page === '404' ? null : href(lang, page);
+const altPath = page === '404' ? href(other, 'home') : href(other, page);
+const canonical = selfPath ? new URL(selfPath, site).href : undefined;
+const fullTitle = page === 'home' ? title : `${title} | ${d.brand}`;
+const ogImage = new URL(asset(`og-${lang}.jpg`), site).href;
+// показ заказчику (GitHub Pages): закрыт от поисковиков и без Метрики старого сайта
+const preview = import.meta.env.PUBLIC_PREVIEW === '1';
+
+const orgLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: lang === 'ru' ? company.legalRu : company.legalEn,
+  alternateName: [company.brandRu, company.brandEn],
+  url: new URL(href(lang, 'home'), site).href,
+  logo: new URL(asset('favicon.svg'), site).href,
+  telephone: company.phone,
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: lang === 'ru' ? company.streetRu : company.streetEn,
+    addressLocality: lang === 'ru' ? 'Оренбург' : 'Orenburg',
+    addressCountry: 'RU',
+  },
+  foundingDate: String(company.founded),
+  areaServed: ['RU', 'KZ', 'UZ', 'TJ', 'AF'],
+  contactPoint: {
+    '@type': 'ContactPoint',
+    telephone: company.phone,
+    contactType: 'sales',
+    availableLanguage: ['Russian'],
+  },
+};
+---
+
+<!doctype html>
+<html lang={d.htmlLang}>
+  <head>
+    <meta charset="utf-8" />
+    <script is:inline>
+      document.documentElement.classList.add('js');
+      // пришли переходом между страницами — отметим, чтобы не повторять вход линии горизонта
+      addEventListener('pagereveal', (e) => e.viewTransition && document.documentElement.classList.add('vt'));
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    {canonical && <link rel="canonical" href={canonical} />}
+    {
+      page !== '404' && (
+        <>
+          <link rel="alternate" hreflang="ru" href={new URL(href('ru', page as PageKey), site).href} />
+          <link rel="alternate" hreflang="en" href={new URL(href('en', page as PageKey), site).href} />
+          <link rel="alternate" hreflang="x-default" href={new URL(href('ru', page as PageKey), site).href} />
+        </>
+      )
+    }
+    {(noindex || preview) && <meta name="robots" content="noindex, nofollow" />}
+    <meta name="theme-color" content="#15130f" />
+    <link rel="icon" href={asset('favicon.svg')} type="image/svg+xml" />
+    <link rel="icon" href={asset('favicon-32.png')} sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href={asset('apple-touch-icon.png')} />
+    <link rel="sitemap" href={asset('sitemap-index.xml')} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={d.brand} />
+    <meta property="og:locale" content={d.locale} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    {canonical && <meta property="og:url" content={canonical} />}
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    {page === 'home' && <script type="application/ld+json" set:html={JSON.stringify(orgLd)} />}
+    <slot name="head" />
+
+    {
+      import.meta.env.PROD && !preview && (
+        <script is:inline define:vars={{ id: company.metrika }}>
+          (function (m, e, t, r, i, k, a) {
+            m[i] = m[i] || function () { (m[i].a = m[i].a || []).push(arguments); };
+            m[i].l = 1 * new Date();
+            k = e.createElement(t); a = e.getElementsByTagName(t)[0];
+            k.async = 1; k.src = r; a.parentNode.insertBefore(k, a);
+          })(window, document, 'script', 'https://mc.yandex.ru/metrika/tag.js', 'ym');
+          ym(id, 'init', { clickmap: true, trackLinks: true, accurateTrackBounce: true, webvisor: false });
+        </script>
+      )
+    }
+  </head>
+  <body data-page={page}>
+    <a class="skip-link" href="#main">{d.skip}</a>
+    <Header lang={lang} page={page} altPath={altPath} overlay={overlayHeader} />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer lang={lang} />
+    <script>
+      // Крупные кадры раскрываются один раз, когда входят в экран
+      const els = document.querySelectorAll<HTMLElement>('[data-reveal]');
+      const io = new IntersectionObserver(
+        (entries) =>
+          entries.forEach((e) => {
+            if (e.isIntersecting) {
+              e.target.setAttribute('data-shown', '');
+              io.unobserve(e.target);
+            }
+          }),
+        { rootMargin: '0px 0px -12% 0px' },
+      );
+      els.forEach((el) => io.observe(el));
+
+      // Закат от прокрутки: в шапке страницы (data-sunset="head") солнце опускается, пока она уходит вверх;
+      // в секциях .sunlit пятно света сползает вниз, пока секция проходит экран. Пишем --sun-k 0…1.
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const suns = [...document.querySelectorAll<HTMLElement>('[data-sunset], .sunlit')];
+        const visible = new Set<HTMLElement>();
+        let pending = 0;
+        const update = () => {
+          pending = 0;
+          const vh = innerHeight;
+          visible.forEach((el) => {
+            const r = el.getBoundingClientRect();
+            const k = el.dataset.sunset === 'head' ? -r.top / r.height : (vh - r.top) / (vh + r.height);
+            el.style.setProperty('--sun-k', Math.min(1, Math.max(0, k)).toFixed(3));
+          });
+        };
+        const sunIo = new IntersectionObserver((es) => {
+          es.forEach((e) => (e.isIntersecting ? visible.add(e.target as HTMLElement) : visible.delete(e.target as HTMLElement)));
+          update();
+        });
+        suns.forEach((el) => sunIo.observe(el));
+        addEventListener('scroll', () => pending || (pending = requestAnimationFrame(update)), { passive: true });
+      }
+
+      // Мельница: крылья в шапке и подвале крутятся от прокрутки и по инерции останавливаются
+      const blades = [...document.querySelectorAll<SVGGElement>('[data-mill] .mark__blades')];
+      if (blades.length && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        let angle = 0, vel = 0, last = scrollY, raf = 0;
+        const tick = () => {
+          vel *= 0.95;
+          angle = (angle + vel) % 360;
+          blades.forEach((b) => (b.style.transform = `rotate(${angle}deg)`));
+          raf = Math.abs(vel) > 0.02 ? requestAnimationFrame(tick) : 0;
+        };
+        addEventListener(
+          'scroll',
+          () => {
+            vel = Math.max(-18, Math.min(18, vel + (scrollY - last) * 0.06));
+            last = scrollY;
+            if (!raf) raf = requestAnimationFrame(tick);
+          },
+          { passive: true },
+        );
+      }
+
+      // Магнит: капсула чуть тянется к курсору (только мышь, без reduced motion)
+      if (matchMedia('(hover: hover) and (pointer: fine)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.addEventListener('pointermove', (e) => {
+          const el = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-magnet]') : null;
+          if (!el) return;
+          const r = el.getBoundingClientRect();
+          el.style.setProperty('--mx', `${((e.clientX - r.left) / r.width - 0.5) * 10}px`);
+          el.style.setProperty('--my', `${((e.clientY - r.top) / r.height - 0.5) * 8}px`);
+        });
+        document.addEventListener('pointerout', (e) => {
+          const el = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-magnet]') : null;
+          if (el && !el.contains(e.relatedTarget as Node | null)) {
+            el.style.setProperty('--mx', '0px');
+            el.style.setProperty('--my', '0px');
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

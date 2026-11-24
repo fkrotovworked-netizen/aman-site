@@ -1,0 +1,104 @@
+---
+// Рабочее действие первого экрана: короткий запрос предложения в форме накладной.
+// Обычная GET-форма — ведёт на «Контакты» с заполненными полями, работает без JS.
+import Button from './Button.astro';
+import { t } from '@/i18n/content';
+import { href, type Lang } from '@/i18n/routes';
+import { commodities } from '@/data/commodities';
+
+interface Props {
+  lang: Lang;
+  class?: string;
+}
+const { lang, class: cls } = Astro.props;
+const d = t(lang);
+const regions = Object.entries(d.regions) as [string, string][];
+---
+
+<form class:list={['qp glass', cls]} action={href(lang, 'contact')} method="get">
+  <div class="qp__head">
+    <p class="qp__title">{d.quote.title}</p>
+    <span class="qp__seal" aria-hidden="true"></span>
+  </div>
+
+  <label class="field">
+    <span class="field__label">{d.quote.crop}</span>
+    <select class="field__control" name="crop">
+      <option value="">{d.quote.cropAny}</option>
+      {commodities.map((c) => <option value={c.id}>{c.name[lang]}</option>)}
+    </select>
+  </label>
+
+  <div class="qp__row">
+    <label class="field">
+      <span class="field__label">{d.quote.volume}</span>
+      <input class="field__control" name="volume" inputmode="numeric" pattern="[0-9 ]*" placeholder={d.quote.volumePh} autocomplete="off" />
+    </label>
+    <label class="field">
+      <span class="field__label">{d.quote.dest}</span>
+      <select class="field__control" name="dest">
+        <option value="">{d.quote.destAny}</option>
+        {regions.map(([id, name]) => <option value={id}>{name}</option>)}
+      </select>
+    </label>
+  </div>
+
+  <Button type="submit" variant="gold" class="qp__submit">{d.quote.submit}</Button>
+  <p class="qp__note">{d.reply}</p>
+</form>
+
+<style>
+  .qp {
+    position: relative;
+    display: grid;
+    gap: var(--s-5);
+    padding: clamp(1.25rem, 0.9rem + 1.2vw, 1.75rem);
+  }
+  .qp__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: var(--s-4);
+    border-bottom: 1px solid var(--rule-dark);
+  }
+  .qp__title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: var(--paper-50);
+    letter-spacing: -0.015em;
+    line-height: 1.1;
+  }
+  /* «печать» — золотой круг, как оттиск на документе */
+  .qp__seal {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    background: var(--gold-300);
+    box-shadow: 0 0 0 4px rgb(232 193 121 / 0.16), 0 0 18px 2px rgb(232 168 82 / 0.55);
+  }
+  .qp__row {
+    display: grid;
+    gap: var(--s-5);
+  }
+  @media (min-width: 26rem) {
+    .qp__row {
+      grid-template-columns: 0.8fr 1.2fr;
+    }
+  }
+  @media (min-width: 26rem) and (max-width: 30rem) {
+    .qp__row {
+      grid-template-columns: 1fr;
+    }
+  }
+  .qp :global(.qp__submit) {
+    justify-content: space-between;
+    width: 100%;
+    margin-top: var(--s-2);
+  }
+  .qp__note {
+    font-size: 0.8125rem;
+    color: var(--on-dark-2);
+    text-align: center;
+  }
+</style>

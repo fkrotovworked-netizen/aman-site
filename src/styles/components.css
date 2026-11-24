@@ -1,0 +1,390 @@
+/* Общие компоненты: кнопки, поля, линейки-«накладные». */
+
+/* — Кнопка «Луч по контуру» —
+   По рамке медленно обходит луч (conic-gradient в border-box, угол --a крутится через @property).
+   На hover луч ускоряется, кнопка тянется к курсору (магнит — скрипт в Base, пишет --mx/--my).
+   gold — главное действие, line — тёмная вторичная, quiet — текстовая ссылка. */
+@property --a {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+.btn {
+  --mx: 0px;
+  --my: 0px;
+  --speed: 5s;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 3.375rem;
+  padding: 0.375rem 0.375rem 0.375rem 1.625rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-text);
+  font-size: 1rem;
+  font-weight: 560;
+  letter-spacing: -0.005em;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  translate: var(--mx) var(--my);
+  transition:
+    translate 500ms cubic-bezier(0.22, 1.2, 0.36, 1),
+    transform var(--t-press) var(--ease-out),
+    box-shadow 400ms ease;
+  animation: btn-spin var(--speed) linear infinite;
+}
+.btn:active {
+  transform: scale(0.97);
+}
+/* капсула без стрелки — отступы поровну */
+.btn:not(.btn--quiet):not(:has(.btn__dot)) {
+  padding-right: 1.625rem;
+}
+.btn:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+@keyframes btn-spin {
+  to {
+    --a: 360deg;
+  }
+}
+.btn--gold {
+  color: var(--ink-950);
+  background:
+    linear-gradient(180deg, #ecc47a, #d9a24c) padding-box,
+    conic-gradient(from var(--a), rgb(255 248 228 / 0.2) 0 60%, #fff6dc 78%, rgb(255 248 228 / 0.2) 92%) border-box;
+  box-shadow: 0 10px 30px -12px rgb(220 167 81 / 0.7);
+}
+.btn--line {
+  color: var(--paper-50);
+  background:
+    linear-gradient(180deg, #1f1b14, #120f0b) padding-box,
+    conic-gradient(from var(--a), rgb(232 193 121 / 0.14) 0 58%, var(--gold-300) 78%, rgb(232 193 121 / 0.14) 94%) border-box;
+  box-shadow: 0 10px 30px -16px rgb(0 0 0 / 0.9);
+}
+.btn__dot {
+  display: grid;
+  place-items: center;
+  width: 2.625rem;
+  height: 2.625rem;
+  border-radius: 50%;
+  flex: none;
+  transition: transform 400ms var(--ease-out);
+}
+.btn--gold .btn__dot {
+  background: #15110a;
+  color: var(--gold-200);
+}
+.btn--line .btn__dot {
+  background: rgb(232 193 121 / 0.12);
+  color: var(--gold-200);
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover {
+    --speed: 1.6s;
+  }
+  .btn--gold:hover {
+    box-shadow: 0 14px 40px -10px rgb(232 168 82 / 0.95);
+  }
+  .btn--line:hover {
+    box-shadow: 0 0 0 1px rgb(232 193 121 / 0.2), 0 12px 36px -14px rgb(232 168 82 / 0.55);
+  }
+  .btn:hover .btn__dot {
+    transform: rotate(-45deg);
+  }
+}
+
+/* Текстовая ссылка: под словами тонкая линия, по ней на hover пробегает луч. */
+.btn--quiet {
+  min-height: 2.75rem;
+  padding: 0;
+  gap: var(--s-2);
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font-weight: 520;
+  animation: none;
+}
+.btn--quiet .btn__label {
+  padding-bottom: 0.3em;
+  background:
+    linear-gradient(90deg, transparent, var(--gold-200), transparent) no-repeat -60% 100% / 40% 1px,
+    linear-gradient(color-mix(in oklab, currentColor 40%, transparent), color-mix(in oklab, currentColor 40%, transparent)) no-repeat 0 100% / 100% 1px;
+  transition: background-position 0s;
+}
+.btn--quiet .btn__dot {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn--quiet:hover .btn__label {
+    background-position: 160% 100%, 0 100%;
+    transition: background-position 900ms var(--ease-out);
+  }
+  .btn--quiet:hover .btn__dot {
+    transform: translateX(2px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    animation: none;
+    translate: none;
+  }
+}
+
+/* — Ряд кнопок — */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-4) var(--s-6);
+}
+
+/* — Поля формы — */
+.field {
+  display: grid;
+  gap: var(--s-2);
+  min-width: 0;
+}
+.field__label {
+  font-family: var(--font-text);
+  font-size: var(--fs-small);
+  font-weight: 500;
+  color: var(--on-paper-2);
+}
+.field__control {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.7rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--rule-paper-strong);
+  border-radius: 0;
+  background: transparent;
+  color: var(--on-paper);
+  font-size: 1.0625rem;
+  appearance: none;
+  transition: border-color var(--t-ui) ease;
+}
+.field__control::placeholder {
+  color: var(--on-paper-3);
+  opacity: 1;
+}
+.field__control:focus {
+  outline: none;
+  border-bottom-color: var(--on-paper);
+}
+.field__control:focus-visible {
+  outline: none;
+  box-shadow: 0 2px 0 0 var(--gold-500);
+}
+select.field__control {
+  padding-right: 1.75rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%235a5243' stroke-width='1.5'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.25rem center;
+  cursor: pointer;
+}
+textarea.field__control {
+  min-height: 7rem;
+  resize: vertical;
+  line-height: 1.5;
+}
+.field[data-invalid] .field__control {
+  border-bottom-color: var(--error);
+}
+.field__error {
+  font-size: 0.8125rem;
+  color: var(--error);
+  min-height: 1.1em;
+}
+
+/* — Линейка документа: ключ — значение на волосяных линиях — */
+.ledger {
+  display: grid;
+  border-top: 1px solid var(--rule-paper-strong);
+}
+.ledger__row {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, 13rem) 1fr;
+  gap: var(--s-4) var(--s-8);
+  padding-block: var(--s-5);
+  border-bottom: 1px solid var(--rule-paper);
+  align-items: baseline;
+}
+.ledger__k {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--tr-micro);
+  text-transform: uppercase;
+  color: var(--on-paper-2);
+}
+.ledger__v {
+  font-size: var(--fs-lead);
+  line-height: 1.4;
+  letter-spacing: -0.006em;
+}
+@media (max-width: 35.99rem) {
+  .ledger__row {
+    grid-template-columns: 1fr;
+    gap: var(--s-2);
+  }
+}
+
+/* — Заголовок секции — */
+.sec-head {
+  display: grid;
+  gap: var(--s-5);
+  max-width: 52rem;
+}
+.sec-head p {
+  color: var(--on-dark-2);
+  max-width: var(--measure);
+  font-size: var(--fs-lead);
+  line-height: 1.5;
+}
+.paper .sec-head p {
+  color: var(--on-paper-2);
+}
+
+/* — Раскрытие крупных кадров при входе в экран — */
+[data-reveal] img {
+  transition:
+    clip-path 1100ms var(--ease-in-out),
+    transform 1400ms var(--ease-out);
+}
+.js [data-reveal]:not([data-shown]) img {
+  clip-path: inset(0 0 100% 0);
+  transform: scale(1.06);
+}
+@media (prefers-reduced-motion: reduce) {
+  .js [data-reveal]:not([data-shown]) img {
+    clip-path: none;
+    transform: none;
+  }
+}
+
+/* — Стекло: тёмный материал поверх кадра. Только там, где под ним фото. — */
+.glass {
+  --glass-bg: rgb(20 17 12 / 0.44);
+  color: var(--on-dark);
+  background:
+    linear-gradient(180deg, rgb(255 236 200 / 0.1), rgb(255 236 200 / 0) 42%),
+    var(--glass-bg);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  backdrop-filter: blur(24px) saturate(1.4);
+  border: 1px solid rgb(255 236 200 / 0.1);
+  border-top-color: rgb(255 236 200 / 0.3);
+  border-radius: var(--radius-m);
+  box-shadow:
+    0 40px 80px -40px rgb(0 0 0 / 0.8),
+    0 12px 28px -14px rgb(0 0 0 / 0.5);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    --glass-bg: var(--ink-850);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+@media (prefers-contrast: more) {
+  .glass {
+    --glass-bg: var(--ink-950);
+    border-color: var(--rule-dark-strong);
+  }
+}
+.glass .field__label {
+  color: var(--on-dark-2);
+}
+.glass .field__control {
+  color: var(--on-dark);
+  border-bottom-color: var(--rule-dark-strong);
+}
+.glass .field__control::placeholder {
+  color: var(--on-dark-3);
+}
+.glass .field__control:focus {
+  border-bottom-color: var(--gold-300);
+}
+.glass select.field__control {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%23c2b7a1' stroke-width='1.5'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E");
+}
+.glass option {
+  color: var(--on-paper);
+  background: var(--paper-50);
+}
+
+/* — Свет низкого солнца: тёплое пятно на тёмных секциях. Позиция — через --sun-x/--sun-y. — */
+.sunlit {
+  position: relative;
+  isolation: isolate;
+}
+.sunlit::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(42% 55% at var(--sun-x, 85%) calc(var(--sun-y, 0%) + var(--sun-k, 0) * 30%), rgb(232 168 82 / 0.22), transparent 70%),
+    radial-gradient(70% 80% at var(--sun-x, 85%) calc(var(--sun-y, 0%) + var(--sun-k, 0) * 30%), rgb(201 142 47 / 0.08), transparent 75%);
+}
+
+/* — Кадр в полный рост с текстом снизу на градиенте (главная «Две стороны», логистика) — */
+.side {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  align-items: end;
+  min-height: clamp(32rem, 22rem + 30vw, 50rem);
+  overflow: hidden;
+}
+.side__img {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+.side__img picture,
+.side__img img {
+  width: 100%;
+  max-width: none;
+  height: 100% !important;
+  object-fit: cover;
+  transition: transform 1400ms var(--ease-out);
+}
+.side__img::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgb(14 13 10 / 0.92) 0%, rgb(14 13 10 / 0.55) 38%, rgb(14 13 10 / 0.05) 70%);
+}
+@media (hover: hover) and (pointer: fine) {
+  .side:hover .side__img img {
+    transform: scale(1.04);
+  }
+}
+.side__body {
+  display: grid;
+  gap: var(--s-5);
+  justify-items: start;
+  padding: clamp(1.5rem, 1rem + 3vw, 4rem) var(--gutter);
+}
+.side__title {
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 1.4rem + 2.6vw, 3.75rem);
+  font-weight: 360;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--paper-50);
+}
+.side__body p {
+  max-width: 30rem;
+  color: var(--paper-200);
+  font-size: var(--fs-lead);
+  line-height: 1.5;
+}

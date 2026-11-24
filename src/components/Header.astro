@@ -1,0 +1,407 @@
+---
+import Logo from './Logo.astro';
+import Button from './Button.astro';
+import { t } from '@/i18n/content';
+import { href, navPages, type Lang, type PageKey } from '@/i18n/routes';
+import { company } from '@/data/company';
+
+interface Props {
+  lang: Lang;
+  page: PageKey | '404';
+  altPath: string;
+  overlay?: boolean;
+}
+const { lang, page, altPath, overlay = false } = Astro.props;
+const d = t(lang);
+---
+
+<header class="hdr" data-overlay={overlay ? '' : undefined}>
+  <div class="hdr__bar wrap">
+    <Logo lang={lang} class="hdr__logo" />
+
+    <nav class="hdr__nav" aria-label={lang === 'ru' ? 'Основная навигация' : 'Main navigation'}>
+      <ul role="list">
+        {
+          navPages.map((p) => (
+            <li>
+              <a href={href(lang, p)} aria-current={p === page ? 'page' : undefined}>
+                {d.nav[p]}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="hdr__tools">
+      <a class="hdr__phone" href={company.phoneHref}>{company.phoneDisplay}</a>
+      <a class="hdr__lang" href={altPath} hreflang={lang === 'ru' ? 'en' : 'ru'} lang={lang === 'ru' ? 'en' : 'ru'}>
+        <span class="sr-only">{d.langSwitch.otherFull}</span>
+        <span aria-hidden="true">{d.langSwitch.other}</span>
+      </a>
+      <Button href={href(lang, 'contact')} variant="gold" class="hdr__cta">{d.cta.quote}</Button>
+      <button class="hdr__burger" type="button" aria-haspopup="dialog" aria-controls="menu" data-menu-open>
+        <span class="sr-only">{d.menu}</span>
+        <span class="hdr__burger-lines" aria-hidden="true"></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<dialog class="menu" id="menu" aria-label={d.menu}>
+  <div class="menu__inner wrap">
+    <div class="menu__top">
+      <Logo lang={lang} />
+      <button class="menu__close" type="button" data-menu-close>
+        <span class="sr-only">{d.close}</span>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19" /></svg>
+      </button>
+    </div>
+    <nav class="menu__nav" aria-label={d.menu}>
+      <ul role="list">
+        {
+          (['home', ...navPages] as PageKey[]).map((p, i) => (
+            <li style={`--i:${i}`}>
+              <a href={href(lang, p)} aria-current={p === page ? 'page' : undefined}>
+                {d.nav[p]}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+    <div class="menu__foot">
+      <a class="menu__phone" href={company.phoneHref}>{company.phoneDisplay}</a>
+      <div class="menu__links">
+        <a href={company.whatsapp} rel="noopener" target="_blank">WhatsApp</a>
+        <a href={company.viber}>Viber</a>
+        <a href={altPath} hreflang={lang === 'ru' ? 'en' : 'ru'}>{d.langSwitch.otherFull}</a>
+      </div>
+      <Button href={href(lang, 'contact')} variant="gold">{d.cta.quote}</Button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  const hdr = document.querySelector<HTMLElement>('.hdr');
+  const menu = document.querySelector<HTMLDialogElement>('#menu');
+
+  // Шапка: материал появляется, когда под ней поехал контент
+  if (hdr) {
+    const sentinel = document.createElement('div');
+    sentinel.style.cssText = 'position:absolute;top:0;left:0;height:24px;width:1px;pointer-events:none';
+    document.body.prepend(sentinel);
+    new IntersectionObserver(([e]) => hdr.toggleAttribute('data-scrolled', !e.isIntersecting)).observe(sentinel);
+  }
+
+  if (menu) {
+    const open = () => {
+      menu.showModal();
+      document.documentElement.style.overflow = 'hidden';
+    };
+    const close = () => {
+      menu.setAttribute('data-closing', '');
+      const done = () => {
+        menu.removeAttribute('data-closing');
+        menu.close();
+        document.documentElement.style.overflow = '';
+      };
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return done();
+      setTimeout(done, 220);
+    };
+    document.querySelectorAll('[data-menu-open]').forEach((b) => b.addEventListener('click', open));
+    menu.querySelector('[data-menu-close]')?.addEventListener('click', close);
+    menu.addEventListener('cancel', (e) => {
+      e.preventDefault();
+      close();
+    });
+    // уходим со страницы — закрываем меню, иначе «Назад» из кэша вернёт его открытым
+    addEventListener('pagehide', () => {
+      if (menu.open) menu.close();
+      document.documentElement.style.overflow = '';
+    });
+    menu.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('a')) document.documentElement.style.overflow = '';
+    });
+    matchMedia('(min-width: 64rem)').addEventListener('change', (e) => {
+      if (e.matches && menu.open) {
+        menu.close();
+        document.documentElement.style.overflow = '';
+      }
+    });
+  }
+</script>
+
+<style>
+  .hdr {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 50;
+    height: var(--header-h);
+    color: var(--on-dark);
+    transition:
+      background-color 320ms ease,
+      backdrop-filter 320ms ease,
+      border-color 320ms ease;
+    border-bottom: 1px solid transparent;
+  }
+  .hdr:not([data-overlay]),
+  .hdr[data-scrolled] {
+    background: rgb(21 19 15 / 0.78);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    border-bottom-color: var(--rule-dark);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .hdr:not([data-overlay]),
+    .hdr[data-scrolled] {
+      background: var(--ink-900);
+      backdrop-filter: none;
+    }
+  }
+  .hdr__bar {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: var(--s-8);
+  }
+  .hdr__nav {
+    display: none;
+    margin-inline: auto;
+  }
+  .hdr__nav ul {
+    display: flex;
+    gap: clamp(1rem, 0.2rem + 1.4vw, 2rem);
+  }
+  .hdr__nav a,
+  .hdr__phone,
+  .hdr__lang {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    font-size: 0.9375rem;
+    font-weight: 480;
+    white-space: nowrap;
+    text-decoration: none;
+    color: var(--on-dark-2);
+    transition: color var(--t-ui) ease;
+  }
+  .hdr__nav a[aria-current='page'] {
+    color: var(--on-dark);
+  }
+  .hdr__nav a[aria-current='page']::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0.55rem;
+    height: 1px;
+    background: var(--gold-400);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .hdr__nav a:hover,
+    .hdr__phone:hover,
+    .hdr__lang:hover {
+      color: var(--on-dark);
+    }
+  }
+  .hdr__tools {
+    display: flex;
+    align-items: center;
+    gap: var(--s-5);
+    margin-left: auto;
+  }
+  .hdr__phone {
+    display: none;
+    font-feature-settings: 'tnum';
+    color: var(--on-dark);
+  }
+  .hdr__lang {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    padding-inline: var(--s-1);
+  }
+  .hdr :global(.hdr__cta) {
+    display: none;
+    min-height: 2.75rem;
+    padding-left: 1.125rem;
+    font-size: 0.9375rem;
+  }
+  .hdr :global(.hdr__cta .btn__dot) {
+    width: 2.125rem;
+    height: 2.125rem;
+  }
+  .hdr__burger {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin-right: -0.5rem;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    border-radius: var(--radius-m);
+  }
+  .hdr__burger-lines,
+  .hdr__burger-lines::before {
+    display: block;
+    width: 1.375rem;
+    height: 1px;
+    background: currentColor;
+    position: relative;
+  }
+  .hdr__burger-lines {
+    transform: translateY(-3px);
+  }
+  .hdr__burger-lines::before {
+    content: '';
+    position: absolute;
+    top: 7px;
+    width: 0.9rem;
+    right: 0;
+  }
+
+  @media (min-width: 40rem) {
+    .hdr :global(.hdr__cta) {
+      display: inline-flex;
+    }
+  }
+  /* семь пунктов навигации умещаются в строку только с ~1200px, ниже — меню */
+  @media (min-width: 75rem) {
+    .hdr__nav {
+      display: block;
+    }
+    .hdr__nav ~ .hdr__tools {
+      margin-left: 0;
+    }
+    .hdr__burger {
+      display: none;
+    }
+  }
+  @media (min-width: 88rem) {
+    .hdr__phone {
+      display: inline-flex;
+    }
+  }
+
+  /* — Мобильное меню: лист опускается сверху, от кнопки, и уходит туда же — */
+  .menu {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: var(--ink-900);
+    color: var(--on-dark);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .menu[open] {
+    animation: menu-in 420ms var(--ease-drawer) both;
+  }
+  .menu[data-closing] {
+    animation: menu-out 220ms var(--ease-out) both;
+  }
+  .menu::backdrop {
+    background: rgb(14 13 10 / 0.5);
+  }
+  @keyframes menu-in {
+    from {
+      transform: translateY(-2.5%);
+      opacity: 0;
+    }
+  }
+  @keyframes menu-out {
+    to {
+      transform: translateY(-2%);
+      opacity: 0;
+    }
+  }
+  .menu__inner {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: max(var(--s-8), env(safe-area-inset-bottom));
+  }
+  .menu__top {
+    height: var(--header-h);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .menu__close {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin-right: -0.5rem;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    border-radius: var(--radius-m);
+  }
+  .menu__nav {
+    padding-block: clamp(2rem, 6vh, 4rem);
+    border-bottom: 1px solid var(--rule-dark);
+  }
+  .menu__nav a {
+    display: block;
+    padding-block: 0.4rem;
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 1.4rem + 3vw, 2.75rem);
+    font-weight: 380;
+    letter-spacing: -0.025em;
+    line-height: 1.12;
+    text-decoration: none;
+    color: var(--on-dark);
+  }
+  .menu__nav a[aria-current='page'] {
+    color: var(--gold-300);
+  }
+  .menu[open] .menu__nav li {
+    animation: menu-item 520ms var(--ease-out) both;
+    animation-delay: calc(60ms + var(--i) * 35ms);
+  }
+  @keyframes menu-item {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+  .menu__foot {
+    display: grid;
+    gap: var(--s-6);
+    padding-top: var(--s-8);
+    margin-top: auto;
+    justify-items: start;
+  }
+  .menu__phone {
+    font-size: 1.5rem;
+    font-feature-settings: 'tnum';
+    text-decoration: none;
+  }
+  .menu__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2) var(--s-6);
+  }
+  .menu__links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    color: var(--on-dark-2);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .menu[open],
+    .menu[data-closing],
+    .menu[open] .menu__nav li {
+      animation-name: none;
+    }
+  }
+</style>

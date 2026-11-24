@@ -1,0 +1,302 @@
+---
+import { Picture } from 'astro:assets';
+import Base from '@/layouts/Base.astro';
+import PageHead from '@/components/PageHead.astro';
+import Button from '@/components/Button.astro';
+import Mark from '@/components/Mark.astro';
+import FinalCta from '@/components/FinalCta.astro';
+import { t } from '@/i18n/content';
+import { href, type Lang } from '@/i18n/routes';
+import { company } from '@/data/company';
+import ears from '@/assets/graded/ears-gold.jpg';
+import plain from '@/assets/graded/plain-sky.jpg';
+import '@/styles/pages.css';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const d = t(lang);
+const p = d.about;
+const ru = lang === 'ru';
+const [first, ...more] = p.text;
+---
+
+<Base lang={lang} page="about" title={p.title} description={p.description} overlayHeader>
+  <PageHead
+    title={p.h1}
+    lead={p.lead}
+    image={plain}
+    imageAlt={ru ? 'Степь под облачным небом' : 'Steppe under a cloudy sky'}
+    imagePosition="50% 60%"
+    caption={`${company.city[lang]} · ${company.coords.label}`}
+    sunX="78%"
+  />
+
+  <!-- Заявление: первый абзац крупно, рядом высокий кадр колосьев, ниже — второй абзац -->
+  <section class="section story sunlit" aria-label={p.lead} style="--sun-x: 90%; --sun-y: 10%">
+    <div class="wrap story__grid">
+      <p class="story__lead">{first}</p>
+      <div class="story__img" data-reveal>
+        <Picture src={ears} formats={['avif', 'webp']} widths={[480, 960]} sizes="(min-width: 64rem) 28vw, 70vw" alt={ru ? 'Колосья пшеницы' : 'Wheat ears'} />
+      </div>
+      <div class="story__more">
+        {more.map((para) => <p>{para}</p>)}
+      </div>
+    </div>
+  </section>
+
+  <!-- Принципы — лист-накладная -->
+  <section class="section sheet-sec" aria-labelledby="pr-title">
+    <div class="wrap">
+      <div class="sheet paper">
+        <div class="sheet__head">
+          <h2 id="pr-title" class="h2">{p.principlesTitle}</h2>
+          <span class="sheet__mark label">{ru ? company.legalRu : company.legalEn}</span>
+        </div>
+        <dl class="ledger">
+          {
+            p.principles.map((row) => (
+              <div class="ledger__row">
+                <dt class="ledger__k">{row.t}</dt>
+                <dd class="ledger__v">{row.d}</dd>
+              </div>
+            ))
+          }
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- Масштаб: четыре цифры из брифа на одной золотой линии -->
+  <section class="section scale sunlit" aria-labelledby="scale-title" style="--sun-x: 70%; --sun-y: 0%">
+    <div class="wrap">
+      <h2 id="scale-title" class="h1 scale__title">{p.scaleTitle}</h2>
+      <dl class="scale__grid">
+        {
+          p.scale.map((c) => (
+            <div class="scale__cell" data-reveal>
+              <dt class="label scale__k">{c.k}</dt>
+              <dd class="scale__v">{c.v}</dd>
+              <dd class="scale__d">{c.d}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+  </section>
+
+  <!-- Офис: знак мельницы над горизонтом, адрес и координаты -->
+  <section class="section office2 sunlit" aria-labelledby="office-title" style="--sun-x: 22%; --sun-y: 55%">
+    <div class="wrap office2__grid">
+      <div class="office2__mark" aria-hidden="true">
+        <Mark size={240} class="office2__svg" />
+        <span class="office2__ground"></span>
+      </div>
+      <div class="office2__body">
+        <h2 id="office-title" class="h2">{p.officeTitle}</h2>
+        <address class="office2__addr">{ru ? company.addressRu : company.addressEn}</address>
+        <dl class="office2__data">
+          <div>
+            <dt class="label">{ru ? 'Координаты' : 'Coordinates'}</dt>
+            <dd class="mono">{company.coords.label}</dd>
+          </div>
+          <div>
+            <dt class="label">{ru ? 'Телефон' : 'Phone'}</dt>
+            <dd><a href={company.phoneHref}>{company.phoneDisplay}</a></dd>
+          </div>
+        </dl>
+        <div class="actions">
+          <Button href={company.mapLink} variant="line" target="_blank" rel="noopener">{p.mapLink}</Button>
+          <Button href={href(lang, 'contact')} variant="quiet">{d.nav.contact}</Button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <FinalCta lang={lang} />
+</Base>
+
+<style>
+  .story {
+    background: var(--ink-900);
+  }
+  .story__grid {
+    display: grid;
+    gap: clamp(2rem, 1rem + 3vw, 4rem);
+  }
+  .story__lead {
+    font-family: var(--font-display);
+    font-size: clamp(1.875rem, 1rem + 3.2vw, 4rem);
+    font-weight: 360;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    color: var(--paper-50);
+    text-wrap: pretty;
+  }
+  .story__img {
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    border-radius: var(--radius-m);
+    max-width: 22rem;
+    box-shadow: 0 50px 90px -50px rgb(0 0 0 / 0.9);
+  }
+  .story__img :global(picture),
+  .story__img :global(img) {
+    width: 100%;
+    height: 100% !important;
+    object-fit: cover;
+  }
+  .story__more p {
+    color: var(--on-dark-2);
+    font-size: var(--fs-lead);
+    line-height: 1.6;
+    max-width: 36rem;
+  }
+  @media (min-width: 64rem) {
+    .story__grid {
+      grid-template-columns: 1.5fr 1fr;
+      grid-template-areas: 'lead img' 'more img';
+      align-items: start;
+      column-gap: clamp(3rem, 1rem + 5vw, 7rem);
+    }
+    .story__lead {
+      grid-area: lead;
+    }
+    .story__more {
+      grid-area: more;
+      align-self: end;
+    }
+    .story__img {
+      grid-area: img;
+      justify-self: end;
+      width: 100%;
+      margin-top: clamp(4rem, 2rem + 6vw, 9rem);
+    }
+  }
+
+  .scale {
+    background: var(--ink-900);
+  }
+  .scale__title {
+    font-weight: 380;
+    margin-bottom: clamp(2rem, 1rem + 3vw, 4rem);
+  }
+  .scale__grid {
+    display: grid;
+    gap: 0;
+    border-top: 1px solid var(--gold-300);
+  }
+  @media (min-width: 40rem) {
+    .scale__grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  @media (min-width: 64rem) {
+    .scale__grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+  .scale__cell {
+    display: grid;
+    align-content: start;
+    gap: var(--s-2);
+    padding: var(--s-6) var(--s-6) var(--s-8) 0;
+    border-bottom: 1px solid var(--rule-dark);
+  }
+  .scale__k {
+    color: var(--on-dark-3);
+  }
+  .scale__v {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 1.2rem + 1.8vw, 2.75rem);
+    font-weight: 380;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    color: var(--paper-50);
+    font-feature-settings: 'tnum', 'lnum';
+    text-wrap: balance;
+  }
+  .scale__d {
+    color: var(--on-dark-2);
+    font-size: var(--fs-small);
+    line-height: 1.5;
+    max-width: 22ch;
+  }
+
+  .office2 {
+    background: var(--ink-950);
+    border-top: 1px solid var(--rule-dark);
+  }
+  .office2__grid {
+    display: grid;
+    gap: clamp(2.5rem, 1.5rem + 3vw, 4rem);
+    align-items: end;
+  }
+  @media (min-width: 64rem) {
+    .office2__grid {
+      grid-template-columns: 1fr 1.2fr;
+    }
+  }
+  .office2__mark {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    padding-bottom: var(--s-2);
+    color: var(--gold-300);
+  }
+  .office2__mark :global(.office2__svg) {
+    width: min(15rem, 56vw);
+    height: auto;
+    filter: drop-shadow(0 0 18px rgb(232 168 82 / 0.35));
+  }
+  .office2__ground {
+    width: 100%;
+    height: 1px;
+    margin-top: -1px;
+    background: linear-gradient(90deg, transparent, var(--gold-300) 30%, var(--gold-300) 70%, transparent);
+    box-shadow: 0 0 12px 0 rgb(232 168 82 / 0.45);
+  }
+  .office2__body {
+    display: grid;
+    gap: var(--s-6);
+    justify-items: start;
+  }
+  .office2__body h2 {
+    font-weight: 380;
+  }
+  .office2__addr {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 1.1rem + 1.5vw, 2.5rem);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-style: normal;
+    color: var(--paper-50);
+    max-width: 22ch;
+  }
+  .office2__data {
+    display: grid;
+    width: 100%;
+    max-width: 32rem;
+    border-top: 1px solid var(--rule-dark-strong);
+  }
+  .office2__data > div {
+    display: grid;
+    grid-template-columns: 9rem 1fr;
+    gap: var(--s-4);
+    align-items: baseline;
+    padding-block: var(--s-4);
+    border-bottom: 1px solid var(--rule-dark);
+  }
+  .office2__data dt {
+    color: var(--on-dark-3);
+  }
+  .office2__data dd {
+    color: var(--on-dark);
+    font-feature-settings: 'tnum', 'lnum';
+  }
+  .office2__data a {
+    text-decoration: none;
+    font-size: 1.125rem;
+  }
+</style>

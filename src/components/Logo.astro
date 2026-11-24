@@ -1,0 +1,54 @@
+---
+import Mark from './Mark.astro';
+import { t } from '@/i18n/content';
+import { href, type Lang } from '@/i18n/routes';
+
+interface Props {
+  lang: Lang;
+  class?: string;
+}
+const { lang, class: cls } = Astro.props;
+const d = t(lang);
+---
+
+<a class:list={['logo', cls]} href={href(lang, 'home')} aria-label={`${d.brand} — ${d.nav.home}`}>
+  <Mark size={34} class="logo__mark" spin />
+  <span class="logo__words">
+    <span class="logo__name">{d.logo.name}</span>
+    <span class="logo__sub">{d.logo.sub}</span>
+  </span>
+</a>
+
+<style>
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-3);
+    text-decoration: none;
+    color: inherit;
+    border-radius: var(--radius-s);
+  }
+  .logo :global(.logo__mark) {
+    flex: none;
+    color: var(--gold-300);
+  }
+  .logo__words {
+    display: grid;
+    line-height: 1;
+    gap: 0.28rem;
+  }
+  .logo__name {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 520;
+    letter-spacing: -0.012em;
+    font-variation-settings: 'opsz' 24;
+  }
+  .logo__sub {
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    opacity: 0.66;
+  }
+</style>

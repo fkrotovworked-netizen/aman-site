@@ -1,0 +1,280 @@
+---
+// Подвал: мельница стоит на золотом горизонте, за ней — низкое солнце; над линией — телефон крупно.
+// Под горизонтом — бренд, разделы, связь и юридическая строка.
+import Mark from './Mark.astro';
+import { t } from '@/i18n/content';
+import { href, navPages, type Lang } from '@/i18n/routes';
+import { company } from '@/data/company';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const d = t(lang);
+const year = new Date().getFullYear();
+---
+
+<footer class="ftr">
+  <div class="ftr__sun" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="ftr__sky">
+      <Mark size={96} class="ftr__mark" spin />
+      <div class="ftr__call">
+        <a class="ftr__phone" href={company.phoneHref}>{company.phoneDisplay}</a>
+        <p class="ftr__reply">{d.reply}</p>
+        <div class="ftr__msgs">
+          <a href={company.whatsapp} target="_blank" rel="noopener">WhatsApp</a>
+          <a href={company.viber}>Viber</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="ftr__horizon" aria-hidden="true">
+      <span class="ftr__line"></span>
+      <span class="ftr__coords mono">{company.city[lang]} · {company.coords.label}</span>
+    </div>
+
+    <div class="ftr__ground">
+      <div class="ftr__brand">
+        <p class="ftr__name">{d.brand}</p>
+        <p class="ftr__tag">{d.footer.tagline}</p>
+      </div>
+
+      <nav class="ftr__col" aria-label={d.footer.sitemap}>
+        <p class="ftr__h label">{d.footer.sitemap}</p>
+        <ul role="list">
+          {navPages.map((p) => <li><a href={href(lang, p)}>{d.nav[p]}</a></li>)}
+        </ul>
+      </nav>
+
+      <div class="ftr__col">
+        <p class="ftr__h label">{d.contact.addressLabel}</p>
+        <address class="ftr__addr">{lang === 'ru' ? company.addressRu : company.addressEn}</address>
+        <a class="ftr__map" href={company.mapLink} target="_blank" rel="noopener">{d.about.mapLink}</a>
+      </div>
+    </div>
+
+    <div class="ftr__bottom">
+      <p>© {year} {lang === 'ru' ? company.legalRu : company.legalEn}. {d.footer.rights}.</p>
+      <p><a href={href(lang, 'privacy')}>{d.nav.privacy}</a> · {d.footer.credits}</p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .ftr {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background: var(--ink-950);
+    color: var(--on-dark-2);
+    padding-top: clamp(4.5rem, 3rem + 5vw, 8rem);
+    padding-bottom: max(var(--s-8), env(safe-area-inset-bottom));
+    font-size: var(--fs-small);
+  }
+
+  /* низкое солнце за мельницей: центр — на линии горизонта */
+  .ftr__sun {
+    position: absolute;
+    z-index: -1;
+    left: calc(var(--gutter) + 3rem);
+    top: var(--sun-top, 15rem);
+    width: min(56rem, 160vw);
+    aspect-ratio: 2.2 / 1;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    background: radial-gradient(closest-side, rgb(255 214 150 / 0.24), rgb(232 168 82 / 0.1) 40%, transparent 75%);
+  }
+
+  /* — над горизонтом — */
+  .ftr__sky {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--s-8) var(--s-12);
+  }
+  .ftr__sky :global(.ftr__mark) {
+    --mw: clamp(4.5rem, 3.5rem + 3vw, 6rem);
+    display: block;
+    width: var(--mw);
+    height: auto;
+    color: var(--gold-300);
+    filter: drop-shadow(0 0 14px rgb(232 168 82 / 0.4));
+    /* горизонт знака (y=39 из 48) совпадает с золотой линией подвала */
+    margin-bottom: calc(var(--mw) * -0.1875 - 0.5px);
+  }
+  .ftr__call {
+    display: grid;
+    gap: var(--s-2);
+    justify-items: start;
+    padding-bottom: var(--s-6);
+  }
+  .ftr__phone {
+    font-family: var(--font-display);
+    font-size: clamp(2.25rem, 1.3rem + 3.6vw, 4.5rem);
+    font-weight: 360;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--paper-50);
+    text-decoration: none;
+    font-feature-settings: 'tnum', 'lnum';
+    transition: color var(--t-ui) ease;
+  }
+  .ftr__reply {
+    color: var(--on-dark-2);
+  }
+  .ftr__msgs {
+    display: flex;
+    gap: var(--s-6);
+    margin-top: var(--s-2);
+  }
+  .ftr__msgs a,
+  .ftr__map {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    color: var(--on-dark);
+    text-underline-offset: 0.3em;
+    text-decoration-thickness: 1px;
+    text-decoration-color: rgb(242 236 224 / 0.35);
+    transition: text-decoration-color var(--t-ui) ease, color var(--t-ui) ease;
+  }
+  /* на телефоне знак уходит под телефон — прямо на линию горизонта */
+  @media (max-width: 47.99rem) {
+    .ftr__sky {
+      flex-direction: column-reverse;
+      align-items: flex-start;
+    }
+    .ftr__call {
+      padding-bottom: 0;
+    }
+  }
+  @media (min-width: 64rem) {
+    .ftr__call {
+      justify-items: end;
+      text-align: right;
+    }
+  }
+
+  /* — горизонт — */
+  .ftr__horizon {
+    display: flex;
+    align-items: center;
+    gap: var(--s-4);
+  }
+  .ftr__line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgb(232 168 82 / 0.25), var(--gold-300) 12%, rgb(232 168 82 / 0.5) 45%, rgb(232 168 82 / 0.15));
+    box-shadow: 0 0 12px 0 rgb(232 168 82 / 0.35);
+  }
+  .ftr__coords {
+    flex: none;
+    color: var(--gold-200);
+    font-feature-settings: 'tnum';
+  }
+
+  /* — под горизонтом — */
+  .ftr__ground {
+    display: grid;
+    gap: var(--s-10) var(--s-8);
+    padding-block: clamp(2.5rem, 2rem + 2vw, 4rem);
+  }
+  @media (min-width: 48rem) {
+    .ftr__ground {
+      grid-template-columns: 1fr 1fr;
+    }
+    .ftr__brand {
+      grid-column: 1 / -1;
+    }
+  }
+  @media (min-width: 64rem) {
+    .ftr__ground {
+      grid-template-columns: 2fr 1fr 1.2fr;
+    }
+    .ftr__brand {
+      grid-column: auto;
+    }
+  }
+  .ftr__name {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+    font-weight: 400;
+    letter-spacing: -0.022em;
+    line-height: 1.05;
+    color: var(--on-dark);
+  }
+  .ftr__tag {
+    margin-top: var(--s-3);
+    max-width: 26rem;
+  }
+  .ftr__h {
+    color: var(--on-dark-3);
+    margin-bottom: var(--s-3);
+  }
+  .ftr__col ul {
+    display: grid;
+  }
+  .ftr__col ul a {
+    display: inline-flex;
+    min-height: 2.25rem;
+    align-items: center;
+    text-decoration: none;
+    color: var(--on-dark-2);
+    transition: color var(--t-ui) ease;
+  }
+  .ftr__addr {
+    font-style: normal;
+    max-width: 18rem;
+    color: var(--on-dark-2);
+  }
+  .ftr__map {
+    margin-top: var(--s-1);
+    text-decoration-line: underline;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ftr__col ul a:hover,
+    .ftr__phone:hover {
+      color: var(--gold-200);
+    }
+    .ftr__msgs a:hover,
+    .ftr__map:hover {
+      text-decoration-color: currentColor;
+    }
+  }
+
+  .ftr__bottom {
+    display: grid;
+    gap: var(--s-3);
+    padding-top: var(--s-6);
+    border-top: 1px solid var(--rule-dark);
+    font-size: 0.8125rem;
+    color: var(--on-dark-3);
+  }
+  .ftr__bottom a {
+    color: inherit;
+  }
+  @media (min-width: 48rem) {
+    .ftr__bottom {
+      grid-template-columns: 1fr auto;
+      align-items: center;
+    }
+  }
+  @media (max-width: 35.99rem) {
+    .ftr__coords {
+      font-size: 0.5625rem;
+    }
+  }
+</style>
+
+<script>
+  // Солнце ставим ровно на линию горизонта (высота верхнего блока зависит от ширины)
+  const ftr = document.querySelector<HTMLElement>('.ftr');
+  const line = ftr?.querySelector<HTMLElement>('.ftr__horizon');
+  if (ftr && line) {
+    const place = () => ftr.style.setProperty('--sun-top', `${line.offsetTop}px`);
+    place();
+    new ResizeObserver(place).observe(ftr);
+  }
+</script>

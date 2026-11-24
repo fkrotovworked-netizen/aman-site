@@ -1,0 +1,529 @@
+---
+// Карта рынков «Свет из Оренбурга».
+// Основа — точечный SVG, посчитанный при сборке (src/lib/map.ts): он же статичный кадр без JS
+// и при reduced motion. Скрипт читает точки из SVG и рисует на canvas поверх: от Оренбурга расходится
+// волна света и зажигает точки, к странам прочерчиваются дуги, по ним бегут кометы,
+// раз в ~7 с проходит тихий пульс. Подписи стран стоят на самой карте.
+// Страны — из брифа. Иран (перспективное) и Китай (развиваемое) — тише, дуга пунктиром, без комет.
+// На «Рынках» (detailed) под картой — список направлений с описаниями, он управляет подсветкой.
+import { buildMap, REGIONS, PROSPECT } from '@/lib/map';
+import { t } from '@/i18n/content';
+import type { Lang } from '@/i18n/routes';
+import { company } from '@/data/company';
+
+interface Props {
+  lang: Lang;
+  /** список направлений с описаниями (страница «Рынки») */
+  detailed?: boolean;
+  class?: string;
+}
+const { lang, detailed = false, class: cls } = Astro.props;
+const d = t(lang);
+const map = buildMap();
+const items = d.markets.list;
+const byId = Object.fromEntries(items.map((it) => [it.id, it]));
+// с какой стороны от конца дуги стоит подпись — соседи в Средней Азии не налезают друг на друга
+const side: Record<string, 'top' | 'bottom' | 'left' | 'right'> = { ru: 'top', kz: 'top', uz: 'left', tj: 'right', af: 'bottom', ir: 'left', cn: 'top' };
+const pct = (x: number, y: number) => `left:${((x / map.width) * 100).toFixed(2)}%;top:${((y / map.height) * 100).toFixed(2)}%`;
+const live = JSON.stringify({
+  hub: [map.hub.x, map.hub.y],
+  order: REGIONS,
+  prospect: REGIONS.map((r) => PROSPECT.includes(r)),
+  arcs: REGIONS.map((r) => map.arcs[r].pts),
+});
+const aria = d.markets.mapAria;
+---
+
+<div class:list={['mm', cls]} data-mm data-map={live}>
+  <figure class="mm__figure">
+    <div class="mm__stage">
+      <svg class="mm__svg" viewBox={`0 0 ${map.width} ${map.height}`} role="img" aria-label={aria}>
+        <path class="mm__ctx" d={map.paths.ctx} stroke-width={map.step * 0.3} stroke-linecap="round" />
+        {
+          REGIONS.map((r) => (
+            <path class="mm__dots" data-region={r} data-prospect={PROSPECT.includes(r) ? '' : undefined} d={map.paths[r]} stroke-width={map.step * 0.36} stroke-linecap="round" />
+          ))
+        }
+        {
+          REGIONS.map((r) => (
+            <g class="mm__arc" data-region={r} data-prospect={PROSPECT.includes(r) ? '' : undefined}>
+              <path d={map.arcs[r].d} />
+              <circle cx={map.arcs[r].x} cy={map.arcs[r].y} r="3" />
+            </g>
+          ))
+        }
+        <g class="mm__hub" transform={`translate(${map.hub.x} ${map.hub.y})`}>
+          <circle class="mm__ring" r="8" />
+          <circle class="mm__core" r="3.4" />
+        </g>
+      </svg>
+      <canvas class="mm__cv" aria-hidden="true"></canvas>
+      {
+        REGIONS.map((r) => (
+          <span
+            class="mm__lbl"
+            data-region={r}
+            data-side={side[r]}
+            data-prospect={PROSPECT.includes(r) ? '' : undefined}
+            style={pct(map.arcs[r].x, map.arcs[r].y)}
+            aria-hidden="true"
+          >
+            {byId[r]?.short ?? byId[r]?.name}
+            {byId[r]?.status && <small class="mm__st">{byId[r].status}</small>}
+          </span>
+        ))
+      }
+      <span class="mm__hubl mono" style={pct(map.hub.x, map.hub.y)} aria-hidden="true">{company.city[lang]}</span>
+    </div>
+    <figcaption class="mm__cap label">
+      <span class="mm__cap-dot" aria-hidden="true"></span>
+      {d.markets.hub} · {company.coords.label}
+    </figcaption>
+  </figure>
+
+  {
+    detailed && (
+      <ul class="mm__list" role="list">
+        {items.map((it) => (
+          <li>
+            <button class="mm__item" type="button" data-region={it.id} data-prospect={it.status ? '' : undefined} aria-pressed="false">
+              <span class="mm__swatch" aria-hidden="true" />
+              <span class="mm__name">
+                {it.name}
+                {it.status && <small class="mm__st">{it.status}</small>}
+              </span>
+              <span class="mm__text">{it.text}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</div>
+
+<script>
+  // цвета на canvas: внутренний рынок — светлое золото, экспорт — золото, перспектива — песок
+  const GOLD: [number, number, number] = [201, 142, 47];
+  const PALE: [number, number, number] = [232, 193, 121];
+  const SAND: [number, number, number] = [176, 160, 122];
+  const CTX: [number, number, number] = [140, 128, 104];
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  type Live = { hub: [number, number]; order: string[]; prospect: boolean[]; arcs: number[][][] };
+
+  document.querySelectorAll<HTMLElement>('[data-mm]').forEach((root) => {
+    const svg = root.querySelector<SVGSVGElement>('.mm__svg')!;
+    const data = JSON.parse(root.dataset.map!) as Live;
+    const ORDER = data.order;
+    const COLORS = ORDER.map((r, i) => (r === 'ru' ? PALE : data.prospect[i] ? SAND : GOLD));
+    const buttons = [...root.querySelectorAll<HTMLButtonElement>('.mm__item')];
+    const marked = [...root.querySelectorAll<Element>('[data-region]')];
+    let active: number = -1; // индекс активного направления или -1
+    let redraw = () => {};
+
+    // — подсветка направления: SVG (статичный кадр), подписи, список, canvas —
+    let pinned: string | null = null;
+    const show = (r: string | null) => {
+      root.toggleAttribute('data-active', !!r);
+      marked.forEach((el) => el.toggleAttribute('data-on', el.getAttribute('data-region') === r));
+      active = r ? ORDER.indexOf(r) : -1;
+      redraw();
+    };
+    buttons.forEach((b) => {
+      const r = b.dataset.region!;
+      b.addEventListener('pointerenter', (e) => e.pointerType === 'mouse' && show(r));
+      b.addEventListener('pointerleave', (e) => e.pointerType === 'mouse' && show(pinned));
+      b.addEventListener('focus', () => show(r));
+      b.addEventListener('blur', () => show(pinned));
+      b.addEventListener('click', () => {
+        pinned = pinned === r ? null : r;
+        buttons.forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.region === pinned)));
+        show(pinned);
+      });
+    });
+
+    // reduced motion — остаётся статичный SVG, подписи видны сразу
+    if (still) return;
+
+    const cv = root.querySelector<HTMLCanvasElement>('.mm__cv')!;
+    const ctx = cv.getContext('2d');
+    if (!ctx) return;
+    const W = svg.viewBox.baseVal.width;
+    const [hx, hy] = data.hub;
+
+    // точки из SVG: «Mx yh0» → x, y, направление (-1 — фон), расстояние до Оренбурга
+    const pts: number[] = [];
+    svg.querySelectorAll<SVGPathElement>('.mm__dots, .mm__ctx').forEach((p) => {
+      const reg = p.dataset.region ? ORDER.indexOf(p.dataset.region) : -1;
+      for (const m of p.getAttribute('d')!.matchAll(/M([\d.]+) ([\d.]+)/g)) {
+        const x = +m[1], y = +m[2];
+        pts.push(x, y, reg, Math.hypot(x - hx, y - hy));
+      }
+    });
+    const n = pts.length / 4;
+    const arcs = data.arcs;
+    const at = (a: number[][], f: number) => {
+      const i = Math.min(a.length - 2, Math.floor(f * (a.length - 1)));
+      const k = f * (a.length - 1) - i;
+      return [a[i][0] + (a[i + 1][0] - a[i][0]) * k, a[i][1] + (a[i + 1][1] - a[i][1]) * k];
+    };
+
+    // вес направления: 1 — обычный, плавно уходит к 0.22, когда подсвечено другое
+    const weight = ORDER.map(() => 1);
+
+    let cssW = 0;
+    const fit = () => {
+      cssW = cv.clientWidth;
+      const dpr = Math.min(2, devicePixelRatio || 1);
+      cv.width = Math.round(cssW * dpr);
+      cv.height = Math.round(cv.clientHeight * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    fit();
+    new ResizeObserver(() => {
+      fit();
+      redraw();
+    }).observe(cv);
+    root.setAttribute('data-live', '');
+
+    let t0 = 0, running = false, started = false, raf = 0;
+    const frame = (now: number) => {
+      raf = 0;
+      const t = (now - t0) / 1000;
+      const s = cssW / W;
+      ctx.clearRect(0, 0, cv.width, cv.height);
+
+      for (let r = 0; r < ORDER.length; r++) {
+        const goal = active < 0 || active === r ? 1 : 0.22;
+        weight[r] += (goal - weight[r]) * 0.12;
+      }
+      const dim = active < 0 ? 1 : 0.5;
+
+      // точки: волна света от Оренбурга, потом пульс раз в 7 с
+      const front = t * 520;
+      const pulse = t > 2.5 ? ((t - 2.5) % 7) * 520 : -999;
+      for (let i = 0; i < n; i++) {
+        const dist = pts[i * 4 + 3];
+        if (dist > front) continue;
+        const x = pts[i * 4], y = pts[i * 4 + 1], r = pts[i * 4 + 2];
+        const edge = Math.max(0, 1 - Math.abs(front - dist) / 60);
+        if (r < 0) {
+          // фон — остальная суша: едва заметна, волна по ней только проходит
+          ctx.fillStyle = `rgba(${CTX[0]},${CTX[1]},${CTX[2]},${(0.13 + edge * 0.25) * dim})`;
+          ctx.beginPath();
+          ctx.arc(x * s, y * s, Math.max(0.6, 0.8 * s), 0, 6.283);
+          ctx.fill();
+          continue;
+        }
+        const pe = Math.max(0, 1 - Math.abs(pulse - dist) / 50) * 0.6;
+        const near = Math.max(0, 1 - dist / 420);
+        const [cr, cg, cb] = COLORS[r];
+        const base = data.prospect[r] ? 0.2 : 0.34;
+        const a = Math.min(1, base + near * 0.5 + edge * 0.7 + pe + (active === r ? 0.4 : 0)) * weight[r];
+        const rad = Math.max(0.7, (0.95 + near * 0.55 + edge * 1.1 + pe * 0.8) * s);
+        ctx.fillStyle = `rgba(${cr},${cg},${cb},${a})`;
+        ctx.beginPath();
+        ctx.arc(x * s, y * s, rad, 0, 6.283);
+        ctx.fill();
+      }
+
+      // дуги прочерчиваются, затем по ним бегут кометы (у перспективных — пунктир без комет)
+      const grow = Math.min(1, Math.max(0, (t - 0.6) / 1.4));
+      arcs.forEach((a, k) => {
+        const g = Math.min(1, Math.max(0, grow * 1.2 - k * 0.05));
+        if (g <= 0) return;
+        const w = weight[k];
+        const prospect = data.prospect[k];
+        ctx.beginPath();
+        const m = Math.max(2, Math.round(g * (a.length - 1)));
+        for (let i = 0; i < m; i++) i ? ctx.lineTo(a[i][0] * s, a[i][1] * s) : ctx.moveTo(a[i][0] * s, a[i][1] * s);
+        ctx.setLineDash(prospect ? [3 * s + 1, 5 * s + 2] : []);
+        ctx.strokeStyle = `rgba(232,193,121,${(prospect ? 0.38 : 0.45) * w + (active === k ? 0.35 : 0)})`;
+        ctx.lineWidth = active === k ? 1.5 : 1;
+        ctx.stroke();
+        ctx.setLineDash([]);
+        if (g < 1) return;
+        if (!prospect) {
+          const f = (t * 0.28 + k * 0.21) % 1;
+          for (let j = 0; j < 14; j++) {
+            const ff = f - j * 0.012;
+            if (ff < 0) break;
+            const [cx, cy] = at(a, ff);
+            ctx.fillStyle = `rgba(255,230,180,${(1 - j / 14) * 0.9 * w})`;
+            ctx.beginPath();
+            ctx.arc(cx * s, cy * s, Math.max(0.8, (2.2 - j * 0.12) * s * 1.2), 0, 6.283);
+            ctx.fill();
+          }
+        }
+        const [ex, ey] = a[a.length - 1];
+        ctx.fillStyle = `rgba(241,215,162,${(prospect ? 0.6 : 0.95) * Math.max(0.4, w)})`;
+        ctx.beginPath();
+        ctx.arc(ex * s, ey * s, Math.max(1.5, (prospect ? 2.4 : 3) * s), 0, 6.283);
+        ctx.fill();
+      });
+
+      // Оренбург: свечение, расходящееся кольцо, ядро
+      const ring = (t % 2.4) / 2.4;
+      const glow = ctx.createRadialGradient(hx * s, hy * s, 0, hx * s, hy * s, 40 * s);
+      glow.addColorStop(0, 'rgba(255,226,170,0.55)');
+      glow.addColorStop(1, 'rgba(255,226,170,0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(hx * s, hy * s, 40 * s, 0, 6.283);
+      ctx.fill();
+      ctx.strokeStyle = `rgba(241,215,162,${0.6 * (1 - ring)})`;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(hx * s, hy * s, (6 + ring * 26) * s, 0, 6.283);
+      ctx.stroke();
+      ctx.fillStyle = '#f8f4eb';
+      ctx.beginPath();
+      ctx.arc(hx * s, hy * s, Math.max(2.5, 3.4 * s), 0, 6.283);
+      ctx.fill();
+
+      if (t > 1.8) root.setAttribute('data-lit', '');
+      if (running) raf = requestAnimationFrame(frame);
+    };
+    redraw = () => {
+      if (started && !raf) raf = requestAnimationFrame(frame);
+    };
+
+    // крутится, только пока карта в экране
+    new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting && !running) {
+          running = true;
+          if (!started) {
+            started = true;
+            t0 = performance.now();
+          }
+          if (!raf) raf = requestAnimationFrame(frame);
+        } else if (!e.isIntersecting) running = false;
+      },
+      { threshold: 0.2 },
+    ).observe(cv);
+  });
+</script>
+
+<style>
+  .mm {
+    --c-ru: var(--gold-300);
+    --c-exp: var(--gold-500);
+    --c-pro: #b0a07a;
+    display: grid;
+    gap: var(--s-8);
+  }
+  @media (min-width: 64rem) {
+    .mm:has(.mm__list) {
+      grid-template-columns: minmax(0, 1fr) 18rem;
+      align-items: end;
+      gap: var(--s-12);
+    }
+  }
+  .mm__figure {
+    position: relative;
+    min-width: 0;
+  }
+  .mm__stage {
+    position: relative;
+    /* кадр карты обрезан по долготе — края растворяем, чтобы не было жёсткого среза суши */
+    --fade: linear-gradient(90deg, transparent, #000 7%, #000 90%, transparent);
+    background: radial-gradient(50% 60% at 52% 35%, rgb(232 168 82 / 0.1), transparent 70%);
+  }
+  .mm__svg,
+  .mm__cv {
+    mask-image: var(--fade);
+  }
+  .mm__svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+  .mm__cv {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+  }
+  .mm[data-live] .mm__cv {
+    display: block;
+  }
+  .mm[data-live] .mm__svg > * {
+    visibility: hidden;
+  }
+
+  /* — статичный кадр (без JS, reduced motion) — */
+  .mm__dots {
+    fill: none;
+    transition: opacity 260ms ease;
+  }
+  .mm__ctx {
+    fill: none;
+    stroke: #8c8068;
+    opacity: 0.16;
+  }
+  .mm__dots { stroke: var(--c-exp); opacity: 0.85; }
+  .mm__dots[data-region='ru'] { stroke: var(--c-ru); opacity: 1; }
+  .mm__dots[data-prospect] { stroke: var(--c-pro); opacity: 0.5; }
+  .mm__arc path {
+    fill: none;
+    stroke: var(--gold-300);
+    stroke-width: 1;
+    opacity: 0.55;
+    transition: opacity 260ms ease;
+  }
+  .mm__arc[data-prospect] path {
+    stroke-dasharray: 3 5;
+  }
+  .mm__arc circle {
+    fill: var(--gold-200);
+  }
+  .mm[data-active] .mm__dots,
+  .mm[data-active] .mm__arc path {
+    opacity: 0.16;
+  }
+  .mm[data-active] .mm__dots[data-on],
+  .mm[data-active] .mm__arc[data-on] path {
+    opacity: 1;
+  }
+  .mm__core { fill: var(--paper-50); }
+  .mm__ring { fill: none; stroke: var(--gold-200); stroke-width: 1.2; opacity: 0.6; }
+
+  /* — подписи на карте — */
+  .mm__lbl {
+    position: absolute;
+    display: grid;
+    justify-items: center;
+    gap: 0.2em;
+    translate: -50% calc(-100% - 0.55rem);
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: clamp(0.875rem, 0.65rem + 0.8vw, 1.5rem);
+    line-height: 1;
+    white-space: nowrap;
+    color: var(--paper-50);
+    text-shadow: 0 1px 12px rgb(0 0 0 / 0.9);
+    pointer-events: none;
+    transition: opacity 900ms ease, color 260ms ease;
+  }
+  .mm__hubl {
+    position: absolute;
+    translate: calc(-100% - 0.5rem) 0.6rem;
+    font-size: 0.6875rem;
+    color: var(--gold-200);
+    text-shadow: 0 1px 10px rgb(0 0 0 / 0.9);
+    pointer-events: none;
+    transition: opacity 900ms ease;
+  }
+  .mm[data-live]:not([data-lit]) :is(.mm__lbl, .mm__hubl) {
+    opacity: 0;
+  }
+  .mm__lbl[data-side='bottom'] { translate: -50% 0.6rem; }
+  .mm__lbl[data-side='left'] { translate: calc(-100% - 0.6rem) -50%; justify-items: end; }
+  .mm__lbl[data-side='right'] { translate: 0.6rem -50%; justify-items: start; }
+  .mm__lbl[data-prospect] { color: var(--on-dark-2); }
+  .mm__st {
+    font-family: var(--font-text);
+    font-style: normal;
+    font-size: 0.6875rem;
+    line-height: 1.2;
+    letter-spacing: 0;
+    color: var(--on-dark-3);
+  }
+  /* на узком экране статус под подписью не помещается — он есть в списке ниже карты */
+  @media (max-width: 47.99rem) {
+    .mm__lbl .mm__st {
+      display: none;
+    }
+    /* «Таджикистан» справа доходит до Китая — подпись Китая уходит под точку */
+    .mm__lbl[data-region='cn'] {
+      translate: -50% 0.6rem;
+    }
+  }
+  .mm[data-active] .mm__lbl {
+    opacity: 0.35;
+  }
+  .mm[data-active] .mm__lbl[data-on] {
+    opacity: 1;
+    color: var(--gold-200);
+  }
+
+  .mm__cap {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    margin-top: var(--s-4);
+    color: var(--on-dark-2);
+  }
+  .mm__cap-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--paper-50);
+    box-shadow: 0 0 0 3px rgb(232 193 121 / 0.35);
+  }
+
+  /* — список регионов («Рынки») — */
+  .mm__list {
+    display: grid;
+    border-top: 1px solid var(--rule-dark-strong);
+  }
+  .mm__item {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: var(--s-4);
+    row-gap: var(--s-1);
+    align-items: baseline;
+    padding: var(--s-4) 0;
+    border: 0;
+    border-bottom: 1px solid var(--rule-dark);
+    background: none;
+    color: var(--on-dark-2);
+    text-align: left;
+    cursor: pointer;
+    transition: color var(--t-ui) ease;
+  }
+  .mm__swatch {
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 50%;
+    background: var(--sw);
+    transform: translateY(-0.1em);
+    transition: transform var(--t-ui) var(--ease-out);
+  }
+  .mm__item { --sw: var(--c-exp); }
+  .mm__item[data-region='ru'] { --sw: var(--c-ru); }
+  .mm__item[data-prospect] { --sw: var(--c-pro); }
+  .mm__name .mm__st {
+    display: block;
+    margin-top: 0.3em;
+    font-size: var(--fs-small);
+    color: var(--gold-300);
+  }
+  .mm__name {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .mm__text {
+    grid-column: 2;
+    font-size: var(--fs-small);
+    line-height: 1.5;
+    color: var(--on-dark-3);
+  }
+  .mm__item[data-on],
+  .mm__item[aria-pressed='true'] {
+    color: var(--on-dark);
+  }
+  .mm__item[data-on] .mm__swatch {
+    transform: translateY(-0.1em) scale(1.4);
+  }
+  .mm__item[data-on] .mm__text {
+    color: var(--on-dark-2);
+  }
+</style>

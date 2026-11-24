@@ -1,0 +1,37 @@
+---
+// Обёртка указателя культур: готовит картинки (webp) и отдаёт React-острову.
+import { getImage } from 'astro:assets';
+import CropIndex, { type CropGroup } from './CropIndex';
+import { commodities, groups } from '@/data/commodities';
+import { t } from '@/i18n/content';
+import { href, type Lang } from '@/i18n/routes';
+import '@/styles/crop-index.css';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const d = t(lang);
+
+const data: CropGroup[] = await Promise.all(
+  groups.map(async (g) => ({
+    id: g.id,
+    label: g[lang],
+    items: await Promise.all(
+      commodities
+        .filter((c) => c.group === g.id)
+        .map(async (c) => ({
+          id: c.id,
+          name: c.name[lang],
+          note: c.note?.[lang],
+          group: g[lang],
+          href: `${href(lang, 'commodities')}#${c.id}`,
+          img: c.photo ? (await getImage({ src: c.photo, width: 960, height: 1200, fit: 'cover', format: 'webp', quality: 80 })).src : undefined,
+          card: c.photo ? (await getImage({ src: c.photo, width: 480, height: 600, fit: 'cover', format: 'webp', quality: 76 })).src : undefined,
+        })),
+    ),
+  })),
+);
+---
+
+<CropIndex client:visible groups={data} noPhoto={d.commodities.noPhoto} />

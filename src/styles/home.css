@@ -1,0 +1,396 @@
+/* Секции главной */
+
+/* — 1. Заявление с фото-вставками — */
+.ledger-sec__title {
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 0.9rem + 4.4vw, 5.25rem);
+  font-weight: 360;
+  line-height: 1.06;
+  letter-spacing: -0.034em;
+  color: var(--on-paper);
+  text-wrap: pretty;
+}
+/* слова проявляются светом (скрипт в Home.astro ставит data-lw / data-lit / data-glow) */
+[data-lw] .lw {
+  color: rgb(26 24 20 / 0.16);
+  transition: color 700ms var(--ease-out), text-shadow 700ms var(--ease-out);
+}
+[data-lw] .lw[data-lit] {
+  color: var(--on-paper);
+}
+[data-lw] .lw[data-glow] {
+  color: var(--gold-600);
+  text-shadow: 0 0 0.5em rgb(232 168 82 / 0.45);
+}
+/* фото между словами: капсула высотой в строку, раскрывается по ширине */
+.inl {
+  display: inline-block;
+  width: 2.1em;
+  height: 0.82em;
+  margin-inline: 0.04em 0.24em;
+  vertical-align: -0.04em;
+  border-radius: 999px;
+  overflow: hidden;
+  box-shadow: 0 10px 24px -12px rgb(26 24 20 / 0.6);
+  transition: width 1100ms var(--ease-out);
+}
+.inl picture,
+.inl img {
+  width: 100%;
+  max-width: none;
+  height: 100% !important;
+  object-fit: cover;
+}
+.js .inl[data-reveal]:not([data-shown]) {
+  width: 0.82em;
+}
+.js .inl[data-reveal] img {
+  clip-path: none !important;
+  transform: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .inl {
+    transition: none;
+  }
+}
+
+/* — 1б. Опись: «Ведомость со светом» — */
+.ved {
+  position: relative;
+  padding-block: clamp(3rem, 2rem + 4vw, 6rem) clamp(4rem, 3rem + 4vw, 7rem);
+  background: var(--ink-900);
+  overflow: hidden;
+}
+.ved__list {
+  border-top: 1px solid var(--rule-dark);
+}
+.ved__row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--s-2) var(--s-6);
+  align-items: center;
+  padding-block: clamp(1.25rem, 1rem + 1vw, 2rem);
+}
+/* линия строки: прочерчивается при появлении, золотится при наведении */
+.ved__row::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: var(--rule-dark-strong);
+  transform-origin: 0 50%;
+  transition: transform 1100ms var(--ease-out) var(--d), background-color 300ms ease;
+}
+.ved__k {
+  grid-column: 1;
+  color: var(--on-dark-3);
+  transition: color 300ms ease;
+}
+.ved__v {
+  grid-column: 1;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 1rem + 2vw, 2.75rem);
+  font-weight: 360;
+  letter-spacing: -0.025em;
+  line-height: 1.12;
+  color: var(--paper-50);
+  max-width: 30ch;
+  text-wrap: pretty;
+  transition:
+    opacity 900ms var(--ease-out) var(--d),
+    transform 900ms var(--ease-out) var(--d),
+    color 300ms ease,
+    translate 500ms var(--ease-out);
+}
+.js .ved__row:not([data-in])::after {
+  transform: scaleX(0);
+}
+.js .ved__row:not([data-in]) .ved__v {
+  opacity: 0;
+  transform: translateY(0.6em);
+}
+.ved__thumb {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  width: 4.5rem;
+  aspect-ratio: 1;
+  border-radius: var(--radius-s);
+  overflow: hidden;
+}
+.ved__thumb picture,
+.ved__thumb img {
+  width: 100%;
+  height: 100% !important;
+  object-fit: cover;
+}
+.ved__foot {
+  margin-top: clamp(2.5rem, 2rem + 2vw, 4rem);
+}
+@media (max-width: 30rem) {
+  .ved__thumb {
+    width: 3.5rem;
+  }
+}
+@media (min-width: 64rem) {
+  .ved__row {
+    grid-template-columns: 14rem 1fr;
+    align-items: baseline;
+  }
+  .ved__v {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .ved__thumb {
+    display: none;
+  }
+}
+/* кадр за курсором — только мышь и широкий экран */
+.ved__float {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  display: none;
+  width: 17rem;
+  aspect-ratio: 4 / 3;
+  pointer-events: none;
+  border-radius: var(--radius-m);
+  overflow: hidden;
+  box-shadow: 0 30px 60px -20px rgb(0 0 0 / 0.85);
+  opacity: 0;
+  scale: 0.85;
+  rotate: -3deg;
+  transition: opacity 300ms ease, scale 450ms var(--ease-out), rotate 450ms var(--ease-out);
+}
+.ved__float[data-on] {
+  opacity: 1;
+  scale: 1;
+  rotate: 0deg;
+}
+.ved__float picture,
+.ved__float img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100% !important;
+  object-fit: cover;
+}
+.ved__float img {
+  opacity: 0;
+  transition: opacity 350ms ease;
+}
+.ved__float img[data-on] {
+  opacity: 1;
+}
+@media (hover: hover) and (pointer: fine) and (min-width: 64rem) {
+  .ved__float {
+    display: block;
+  }
+  .ved__row:hover::after {
+    background: linear-gradient(90deg, var(--gold-300), rgb(232 168 82 / 0.2));
+  }
+  .ved__row:hover .ved__k {
+    color: var(--gold-200);
+  }
+  .ved__row:hover .ved__v {
+    translate: 0.5rem 0;
+  }
+  .ved__list:hover .ved__row:not(:hover) .ved__v {
+    color: var(--on-dark-3);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ved__row::after,
+  .ved__v {
+    transition: color 300ms ease;
+  }
+  .js .ved__row:not([data-in])::after,
+  .js .ved__row:not([data-in]) .ved__v {
+    transform: none;
+    opacity: 1;
+  }
+  .ved__float {
+    transition: opacity 300ms ease;
+    scale: 1;
+    rotate: 0deg;
+  }
+}
+
+/* — 2. Культуры — */
+.crops {
+  background: var(--ink-900);
+}
+.crops__head {
+  display: grid;
+  gap: var(--s-8);
+  margin-bottom: clamp(2.5rem, 1.5rem + 3vw, 4.5rem);
+}
+.crops__head h2 {
+  max-width: 14ch;
+}
+/* английский заголовок длиннее словами — без расширения ломается на четыре строки */
+:lang(en) .crops__head h2 {
+  max-width: 19ch;
+  font-weight: 380;
+}
+.crops__aside {
+  display: grid;
+  gap: var(--s-6);
+  justify-items: start;
+  align-content: end;
+  color: var(--on-dark-2);
+  font-size: var(--fs-lead);
+  line-height: 1.5;
+}
+.crops__aside p {
+  max-width: 26rem;
+}
+@media (min-width: 64rem) {
+  .crops__head {
+    grid-template-columns: 1.3fr 0.7fr;
+    align-items: end;
+  }
+}
+/* — 3. Рынки — */
+.markets {
+  background:
+    radial-gradient(80% 60% at 62% 38%, rgb(83 87 64 / 0.32), transparent 70%),
+    var(--olive-900);
+  border-top: 1px solid var(--rule-dark);
+}
+.markets__head {
+  margin-bottom: clamp(2.5rem, 1.5rem + 3vw, 4rem);
+}
+.markets__head h2 {
+  font-weight: 380;
+}
+.markets__more {
+  margin-top: var(--s-8);
+  color: var(--on-dark);
+}
+
+/* — 4. Логистика: кадр во всю ширину, стекло справа — */
+.logi {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  align-items: end;
+  min-height: max(40rem, 100svh);
+  padding-block: var(--section-y) clamp(2rem, 1rem + 4vw, 4rem);
+  overflow: hidden;
+  background: var(--ink-950);
+}
+.logi__media {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+.logi__media picture,
+.logi__media img {
+  width: 100%;
+  max-width: none;
+  height: 100% !important;
+  object-fit: cover;
+  object-position: 30% 50%;
+}
+.logi__media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, var(--ink-900) 0%, rgb(14 13 10 / 0) 18%),
+    linear-gradient(0deg, rgb(30 20 8 / 0.28), rgb(30 20 8 / 0.28)),
+    linear-gradient(0deg, rgb(14 13 10 / 0.6) 0%, rgb(14 13 10 / 0) 45%),
+    radial-gradient(60% 70% at 100% 0%, rgb(232 168 82 / 0.22), transparent 70%);
+}
+.logi__inner {
+  display: grid;
+  width: 100%;
+}
+.logi__panel {
+  --glass-bg: rgb(16 14 10 / 0.66);
+  display: grid;
+  gap: var(--s-5);
+  justify-items: start;
+  width: 100%;
+  max-width: 33rem;
+  padding: clamp(1.5rem, 1rem + 2vw, 2.75rem);
+}
+.logi__panel h2 {
+  font-weight: 380;
+  color: var(--paper-50);
+}
+.logi__text {
+  color: var(--on-dark-2);
+  font-size: var(--fs-lead);
+  line-height: 1.5;
+}
+.logi__points {
+  width: 100%;
+  border-top: 1px solid var(--rule-dark-strong);
+}
+.logi__points li {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding-block: var(--s-3);
+  border-bottom: 1px solid var(--rule-dark);
+}
+.logi__points li::before {
+  content: '';
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--gold-300);
+  box-shadow: 0 0 10px 1px rgb(232 168 82 / 0.6);
+  flex: none;
+}
+@media (min-width: 64rem) {
+  .logi__panel {
+    justify-self: end;
+  }
+}
+
+/* — 5. Две стороны: два кадра в полный рост, заголовок лежит на кадрах (без пустой полосы над ними) — */
+.sides {
+  position: relative;
+  background: var(--ink-950);
+}
+.sides > .wrap {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 2;
+  padding-top: var(--section-y);
+  pointer-events: none;
+}
+.sides__title {
+  font-weight: 360;
+  max-width: 14ch;
+  color: var(--paper-50);
+  text-shadow: 0 2px 24px rgb(14 13 10 / 0.6);
+}
+.sides__grid {
+  display: grid;
+  gap: 2px;
+}
+/* место под заголовок сверху; верх кадров уходит в тень, чтобы заголовок читался */
+.sides .side {
+  padding-top: calc(var(--section-y) + clamp(7rem, 5rem + 6vw, 11rem));
+}
+.sides .side__img::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 1;
+  height: 45%;
+  background: linear-gradient(180deg, rgb(14 13 10 / 0.8), rgb(14 13 10 / 0));
+}
+.sides .side + .side {
+  padding-top: 0;
+}
+@media (min-width: 48rem) {
+  .sides__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
