@@ -29,19 +29,13 @@ const regions = Object.entries(d.regions) as [string, string][];
     </select>
   </label>
 
-  <div class="qp__row">
-    <label class="field">
-      <span class="field__label">{d.quote.volume}</span>
-      <input class="field__control" name="volume" inputmode="numeric" pattern="[0-9 ]*" placeholder={d.quote.volumePh} autocomplete="off" />
-    </label>
-    <label class="field">
-      <span class="field__label">{d.quote.dest}</span>
-      <select class="field__control" name="dest">
-        <option value="">{d.quote.destAny}</option>
-        {regions.map(([id, name]) => <option value={id}>{name}</option>)}
-      </select>
-    </label>
-  </div>
+  <label class="field">
+    <span class="field__label">{d.quote.dest}</span>
+    <select class="field__control" name="dest">
+      <option value="">{d.quote.destAny}</option>
+      {regions.map(([id, name]) => <option value={id}>{name}</option>)}
+    </select>
+  </label>
 
   <Button type="submit" variant="gold" class="qp__submit">{d.quote.submit}</Button>
   <p class="qp__note">{d.reply}</p>
@@ -76,20 +70,6 @@ const regions = Object.entries(d.regions) as [string, string][];
     border-radius: 50%;
     background: var(--gold-300);
     box-shadow: 0 0 0 4px rgb(232 193 121 / 0.16), 0 0 18px 2px rgb(232 168 82 / 0.55);
-  }
-  .qp__row {
-    display: grid;
-    gap: var(--s-5);
-  }
-  @media (min-width: 26rem) {
-    .qp__row {
-      grid-template-columns: 0.8fr 1.2fr;
-    }
-  }
-  @media (min-width: 26rem) and (max-width: 30rem) {
-    .qp__row {
-      grid-template-columns: 1fr;
-    }
   }
   .qp :global(.qp__submit) {
     justify-content: space-between;

@@ -22,7 +22,7 @@ const warmer = [
   [0.04, 0.84, 0.04],
   [0.0, 0.1, 0.55],
 ];
-const COLD = new Set(['silos-gold.jpg', 'hopper-steppe.jpg', 'elevator-concrete.jpg']);
+const COLD = new Set(['silos-gold.jpg', 'hopper-steppe.jpg', 'elevator-concrete.jpg', 'hopper-field.jpg']);
 
 for (const f of (await readdir(SRC)).filter((f) => f.endsWith('.jpg'))) {
   const crop = f.startsWith('crop-');

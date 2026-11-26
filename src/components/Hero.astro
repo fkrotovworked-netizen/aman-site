@@ -1,11 +1,12 @@
 ---
-// Первый экран: кадр степи на закате, линия горизонта совпадает с горизонтом фото
+// Первый экран: пшеничное поле на закате — колосья качаются на ветру (видео-петля поверх постера),
+// линия горизонта совпадает с горизонтом кадра
 // и становится фирменной линией сайта. Заголовок — снизу слева, рабочая форма — справа.
 // Один авторский момент: горизонт прочерчивается от солнца, строки заголовка выходят из-под линии.
 import { Picture } from 'astro:assets';
 import QuotePanel from './QuotePanel.astro';
 import Button from './Button.astro';
-import heroImg from '@/assets/graded/hero-sunset.jpg';
+import heroImg from '@/assets/hero/hero-field.jpg';
 import { t } from '@/i18n/content';
 import { href, type Lang } from '@/i18n/routes';
 import { company } from '@/data/company';
@@ -15,6 +16,8 @@ interface Props {
 }
 const { lang } = Astro.props;
 const d = t(lang);
+// видео лежит в public/ — путь от базы сборки (на GitHub Pages сайт в подпапке)
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 
 <section class="hero" aria-labelledby="hero-title" data-sunset="head">
@@ -25,11 +28,16 @@ const d = t(lang);
         formats={['avif', 'webp']}
         widths={[640, 960, 1280, 1920, 2560, 3000]}
         sizes="100vw"
-        alt={lang === 'ru' ? 'Степь на закате, низкое солнце над полем' : 'Steppe at sunset, low sun over the field'}
+        alt={lang === 'ru' ? 'Пшеничное поле на закате, низкое солнце над холмами' : 'Wheat field at sunset, low sun over the hills'}
         loading="eager"
         fetchpriority="high"
         class="hero__img"
       />
+      <!-- Колосья на ветру: бесшовная петля 4,9 с. Запускает скрипт ниже — не при reduced motion и не при экономии трафика -->
+      <video class="hero__video" muted loop playsinline preload="none" aria-hidden="true" tabindex="-1" data-hero-video>
+        <source src={`${base}/video/hero-field-720.mp4`} type="video/mp4" media="(max-width: 37.5rem)" />
+        <source src={`${base}/video/hero-field-1920.mp4`} type="video/mp4" />
+      </video>
     </div>
     <div class="hero__shade" aria-hidden="true"></div>
     <div class="hero__sun" aria-hidden="true"></div>
@@ -60,12 +68,27 @@ const d = t(lang);
   </div>
 </section>
 
+<script>
+  // Видео колосьев: только если пользователь не просил меньше движения и не экономит трафик.
+  // Играет, пока экран виден; проявляется, когда пошли первые кадры.
+  const v = document.querySelector<HTMLVideoElement>('[data-hero-video]');
+  const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+  if (v && !matchMedia('(prefers-reduced-motion: reduce)').matches && !conn?.saveData) {
+    v.preload = 'auto';
+    v.addEventListener('playing', () => v.setAttribute('data-playing', ''), { once: true });
+    new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) v.play().catch(() => {});
+      else v.pause();
+    }).observe(v);
+  }
+</script>
+
 <style>
   .hero {
     --H: max(40rem, 100svh);
-    --R: max(var(--H), 50vw); /* высота кадра 2:1 при object-fit: cover */
-    /* горизонт на фото — 39.4% высоты кадра */
-    --horizon: calc(0.394 * var(--R) - (var(--R) - var(--H)) / 2);
+    --R: max(var(--H), 56.25vw); /* высота кадра 16:9 при object-fit: cover */
+    /* горизонт (гребень холма у солнца) — 40% высоты кадра */
+    --horizon: calc(0.4 * var(--R) - (var(--R) - var(--H)) / 2);
     position: relative;
     background: var(--ink-950);
     color: var(--on-dark);
@@ -87,13 +110,26 @@ const d = t(lang);
     width: 100%;
     height: 100%;
   }
-  .hero__media :global(img) {
+  .hero__media :global(img),
+  .hero__video {
+    position: absolute;
+    inset: 0;
     width: 100%;
     max-width: none;
     height: 100% !important;
     object-fit: cover;
-    object-position: 28% 50%;
+    object-position: 50% 50%;
+  }
+  .hero__media :global(img) {
     animation: hero-img 2600ms var(--ease-out) both;
+  }
+  /* видео проявляется поверх постера, когда пошли кадры — без вспышки и скачка */
+  .hero__video {
+    opacity: 0;
+    transition: opacity 1200ms ease;
+  }
+  .hero__video[data-playing] {
+    opacity: 1;
   }
   @keyframes hero-img {
     from {
@@ -107,14 +143,15 @@ const d = t(lang);
   .hero__shade {
     background:
       linear-gradient(180deg, rgb(14 13 10 / 0.55) 0%, rgb(14 13 10 / 0) 22%),
-      linear-gradient(0deg, rgb(14 13 10 / 0.9) 0%, rgb(14 13 10 / 0.62) 30%, rgb(14 13 10 / 0) 62%),
-      linear-gradient(90deg, rgb(14 13 10 / 0.45) 0%, rgb(14 13 10 / 0) 55%);
+      linear-gradient(0deg, rgb(14 13 10 / 0.72) 0%, rgb(14 13 10 / 0.3) 24%, rgb(14 13 10 / 0) 48%),
+      /* тень под заголовком и текстом слева — колосья в центре и справа остаются видны */
+      radial-gradient(70% 75% at 0% 100%, rgb(14 13 10 / 0.72), rgb(14 13 10 / 0) 70%);
   }
 
   /* — Солнце: свет разгорается на горизонте вместе с линией — */
   .hero__sun {
     position: absolute;
-    left: 27%;
+    left: 50%; /* солнце в кадре — по центру */
     top: var(--horizon);
     z-index: -1;
     width: min(78rem, 150vw);
@@ -127,7 +164,8 @@ const d = t(lang);
     animation: hero-sun 3200ms var(--ease-out) 150ms both;
     /* закат от прокрутки: --sun-k 0…1 пишет скрипт в Base */
     translate: 0 calc(var(--sun-k, 0) * 26%);
-    opacity: calc(1 - var(--sun-k, 0) * 0.75);
+    /* в кадре своё солнце — наше свечение только подогревает его */
+    opacity: calc(0.55 - var(--sun-k, 0) * 0.4);
   }
   @keyframes hero-sun {
     from {
@@ -151,8 +189,8 @@ const d = t(lang);
     right: 0;
     top: 0;
     height: 1px;
-    background: linear-gradient(90deg, rgb(242 236 224 / 0.15), rgb(241 215 162 / 0.85) 28%, rgb(242 236 224 / 0.35) 70%, rgb(242 236 224 / 0.12));
-    transform-origin: 28% 50%;
+    background: linear-gradient(90deg, rgb(242 236 224 / 0.12), rgb(242 236 224 / 0.35) 25%, rgb(241 215 162 / 0.85) 50%, rgb(242 236 224 / 0.35) 75%, rgb(242 236 224 / 0.12));
+    transform-origin: 50% 50%;
     animation: hero-line 1500ms var(--ease-in-out) 250ms both;
   }
   @keyframes hero-line {
@@ -277,9 +315,21 @@ const d = t(lang);
       height: var(--H);
       overflow: hidden;
     }
+    /* текст на телефоне идёт почти во всю ширину — затемняем низ кадра целиком */
+    .hero__shade {
+      background:
+        linear-gradient(180deg, rgb(14 13 10 / 0.55) 0%, rgb(14 13 10 / 0) 22%),
+        linear-gradient(0deg, rgb(14 13 10 / 0.92) 0%, rgb(14 13 10 / 0.66) 34%, rgb(14 13 10 / 0) 66%);
+    }
     .hero__content {
       padding-top: var(--H);
       padding-bottom: var(--s-12);
+    }
+  }
+  /* на телефоне идёт квадратная версия видео (центр кадра) */
+  @media (max-width: 37.5rem) {
+    .hero {
+      --R: max(var(--H), 100vw);
     }
   }
   @media (max-width: 47.99rem) {

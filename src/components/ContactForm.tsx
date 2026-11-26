@@ -22,7 +22,7 @@ interface Props {
   lang: 'ru' | 'en';
 }
 
-type Field = 'role' | 'name' | 'company' | 'email' | 'phone' | 'country' | 'crop' | 'volume' | 'message' | 'consent';
+type Field = 'role' | 'name' | 'email' | 'phone' | 'crop' | 'message' | 'consent';
 type Values = Record<Exclude<Field, 'consent'>, string> & { consent: boolean; website: string };
 type Errors = Partial<Record<Field | 'contact', string>>;
 
@@ -35,12 +35,9 @@ export default function ContactForm(props: Props) {
   const [v, setV] = useState<Values>({
     role: 'buyer',
     name: '',
-    company: '',
     email: '',
     phone: '',
-    country: '',
     crop: '',
-    volume: '',
     message: '',
     consent: false,
     website: '', // ловушка для ботов
@@ -49,14 +46,13 @@ export default function ContactForm(props: Props) {
   const [state, setState] = useState<'edit' | 'sending' | 'sent' | 'error' | 'offline'>('edit');
   const [copied, setCopied] = useState(false);
 
-  // Предзаполнение из адреса: ?crop=wheat&volume=500&dest=asia&role=supplier
+  // Предзаполнение из адреса: ?crop=wheat&dest=asia&role=supplier
   useEffect(() => {
     const q = new URLSearchParams(location.search);
     const dest = regions.find((r) => r.id === q.get('dest'));
     setV((prev) => ({
       ...prev,
       crop: crops.some((c) => c.id === q.get('crop')) ? q.get('crop')! : prev.crop,
-      volume: (q.get('volume') || '').replace(/[^\d\s]/g, '').slice(0, 9) || prev.volume,
       role: q.get('role') === 'supplier' ? 'supplier' : prev.role,
       message: dest ? `${lang === 'ru' ? 'Направление' : 'Destination'}: ${dest.name}` : prev.message,
     }));
@@ -88,12 +84,9 @@ export default function ContactForm(props: Props) {
     s.waIntro,
     `${s.role}: ${v.role === 'supplier' ? s.roleSupplier : s.roleBuyer}`,
     `${s.name}: ${v.name}`,
-    v.company && `${s.company}: ${v.company}`,
     v.email && `${s.email}: ${v.email}`,
     v.phone && `${s.phone}: ${v.phone}`,
-    v.country && `${s.country}: ${v.country}`,
     cropName && `${s.crop}: ${cropName}`,
-    v.volume && `${s.volume}: ${v.volume}`,
     v.message && `${s.message}: ${v.message}`,
   ]
     .filter(Boolean)
@@ -174,10 +167,8 @@ export default function ContactForm(props: Props) {
 
             <div className="cf__grid">
               <Input id="cf-name" label={s.name} value={v.name} onChange={set('name')} onBlur={blur('name')} error={show('name')} autoComplete="name" required />
-              <Input id="cf-company" label={s.company} value={v.company} onChange={set('company')} onBlur={blur('company')} autoComplete="organization" />
               <Input id="cf-email" label={s.email} type="email" value={v.email} onChange={set('email')} onBlur={blur('email')} error={show('email') || show('contact')} autoComplete="email" inputMode="email" />
               <Input id="cf-phone" label={s.phone} type="tel" value={v.phone} onChange={set('phone')} onBlur={blur('phone')} error={show('phone')} autoComplete="tel" inputMode="tel" />
-              <Input id="cf-country" label={s.country} value={v.country} onChange={set('country')} onBlur={blur('country')} autoComplete="country-name" />
               <div className="field">
                 <label className="field__label" htmlFor="cf-crop">{s.crop}</label>
                 <select id="cf-crop" className="field__control" value={v.crop} onChange={set('crop')}>
@@ -187,7 +178,6 @@ export default function ContactForm(props: Props) {
                   ))}
                 </select>
               </div>
-              <Input id="cf-volume" label={s.volume} value={v.volume} onChange={set('volume')} inputMode="numeric" />
             </div>
             <p className="cf__hint">{s.contactHint}</p>
 
