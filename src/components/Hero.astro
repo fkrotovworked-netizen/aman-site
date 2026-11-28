@@ -1,12 +1,11 @@
 ---
-// Первый экран: пшеничное поле на закате — колосья качаются на ветру (видео-петля поверх постера),
-// линия горизонта совпадает с горизонтом кадра
-// и становится фирменной линией сайта. Заголовок — снизу слева, рабочая форма — справа.
+// Первый экран: ночная уборка, дрон над комбайном — фары режут поле, сзади столб пыли
+// (видео-петля поверх постера). Фирменная линия горизонта проходит по жатке комбайна. Заголовок — снизу слева, рабочая форма — справа.
 // Один авторский момент: горизонт прочерчивается от солнца, строки заголовка выходят из-под линии.
 import { Picture } from 'astro:assets';
 import QuotePanel from './QuotePanel.astro';
 import Button from './Button.astro';
-import heroImg from '@/assets/hero/hero-field.jpg';
+import heroImg from '@/assets/hero/hero-night.jpg';
 import { t } from '@/i18n/content';
 import { href, type Lang } from '@/i18n/routes';
 import { company } from '@/data/company';
@@ -28,15 +27,15 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
         formats={['avif', 'webp']}
         widths={[640, 960, 1280, 1920, 2560, 3000]}
         sizes="100vw"
-        alt={lang === 'ru' ? 'Пшеничное поле на закате, низкое солнце над холмами' : 'Wheat field at sunset, low sun over the hills'}
+        alt={lang === 'ru' ? 'Ночная уборка: комбайн с фарами идёт по полю, вид сверху' : 'Night harvest: a combine with its lights on, seen from above'}
         loading="eager"
         fetchpriority="high"
         class="hero__img"
       />
-      <!-- Колосья на ветру: бесшовная петля 4,9 с. Запускает скрипт ниже — не при reduced motion и не при экономии трафика -->
+      <!-- Ночная уборка: бесшовная петля 10 с. Запускает скрипт ниже — не при reduced motion и не при экономии трафика -->
       <video class="hero__video" muted loop playsinline preload="none" aria-hidden="true" tabindex="-1" data-hero-video>
-        <source src={`${base}/video/hero-field-720.mp4`} type="video/mp4" media="(max-width: 37.5rem)" />
-        <source src={`${base}/video/hero-field-1920.mp4`} type="video/mp4" />
+        <source src={`${base}/video/hero-night-720.mp4`} type="video/mp4" media="(max-width: 37.5rem)" />
+        <source src={`${base}/video/hero-night-1920.mp4`} type="video/mp4" />
       </video>
     </div>
     <div class="hero__shade" aria-hidden="true"></div>
@@ -69,7 +68,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 </section>
 
 <script>
-  // Видео колосьев: только если пользователь не просил меньше движения и не экономит трафик.
+  // Видео уборки: только если пользователь не просил меньше движения и не экономит трафик.
   // Играет, пока экран виден; проявляется, когда пошли первые кадры.
   const v = document.querySelector<HTMLVideoElement>('[data-hero-video]');
   const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
@@ -87,7 +86,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   .hero {
     --H: max(40rem, 100svh);
     --R: max(var(--H), 56.25vw); /* высота кадра 16:9 при object-fit: cover */
-    /* горизонт (гребень холма у солнца) — 40% высоты кадра */
+    /* горизонт — 40% высоты кадра: там жатка комбайна */
     --horizon: calc(0.4 * var(--R) - (var(--R) - var(--H)) / 2);
     position: relative;
     background: var(--ink-950);
@@ -144,14 +143,14 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     background:
       linear-gradient(180deg, rgb(14 13 10 / 0.55) 0%, rgb(14 13 10 / 0) 22%),
       linear-gradient(0deg, rgb(14 13 10 / 0.72) 0%, rgb(14 13 10 / 0.3) 24%, rgb(14 13 10 / 0) 48%),
-      /* тень под заголовком и текстом слева — колосья в центре и справа остаются видны */
+      /* тень под заголовком и текстом слева — комбайн в центре остаётся виден */
       radial-gradient(70% 75% at 0% 100%, rgb(14 13 10 / 0.72), rgb(14 13 10 / 0) 70%);
   }
 
   /* — Солнце: свет разгорается на горизонте вместе с линией — */
   .hero__sun {
     position: absolute;
-    left: 50%; /* солнце в кадре — по центру */
+    left: 50%; /* свет — над комбайном по центру кадра */
     top: var(--horizon);
     z-index: -1;
     width: min(78rem, 150vw);
@@ -164,7 +163,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     animation: hero-sun 3200ms var(--ease-out) 150ms both;
     /* закат от прокрутки: --sun-k 0…1 пишет скрипт в Base */
     translate: 0 calc(var(--sun-k, 0) * 26%);
-    /* в кадре своё солнце — наше свечение только подогревает его */
+    /* тёплый свет подогревает фары комбайна */
     opacity: calc(0.55 - var(--sun-k, 0) * 0.4);
   }
   @keyframes hero-sun {
@@ -330,6 +329,14 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   @media (max-width: 37.5rem) {
     .hero {
       --R: max(var(--H), 100vw);
+      /* кадр поднят на 14% (ниже), жатка с 0.4 уходит на 0.4 × 1.14 − 0.14 ≈ 0.316 высоты */
+      --horizon: calc(0.316 * var(--H));
+    }
+    /* комбайн — над заголовком, а не под ним: кадр выше на 14% */
+    .hero__media :global(img),
+    .hero__video {
+      top: -14%;
+      height: 114% !important;
     }
   }
   @media (max-width: 47.99rem) {
